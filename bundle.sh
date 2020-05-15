@@ -1,4 +1,4 @@
-VER=6
+VER=7
 
 ex() {
 
@@ -154,6 +154,13 @@ files() {
 	sep2 hosts
 	cat /etc/hosts
 	echo
+
+	sep2 exports
+	if [[ -f /etc/exports ]]; then
+		cat /etc/exports
+	fi
+	echo
+
 	sep2 daemon.json
 	cat /etc/docker/daemon.json
 	echo
@@ -179,10 +186,10 @@ nodes() {
 pods() {
 	sep ${FUNCNAME[0]}
 	sep2 status ${FUNCNAME[0]}
-	kubectl get pods -o wide 2>/dev/null
+	kubectl get pods -A -o wide 2>/dev/null
 	echo
 	sep2 debug ${FUNCNAME[0]}
-	kubectl describe pods
+	kubectl describe pods -A
 	echo
 }
 
@@ -204,6 +211,12 @@ certificates() {
 	fi
 }
 
+nexus() {
+	sep ${FUNCNAME[0]}
+
+	kubectl get ingress -o yaml -n nexus
+}
+
 logs() {
 	sep ${FUNCNAME[0]}
 
@@ -213,6 +226,11 @@ logs() {
 	for pod in $(kubectl get pods -o name -n kube-system -l app=flannel); do sep2 $pod ${FUNCNAME[0]};  kubectl logs -n kube-system $pod; done
 	#kube-proxy
 	for pod in $(kubectl get pods -o name -n kube-system -l k8s-app=kube-proxy); do sep2 $pod ${FUNCNAME[0]};  kubectl logs -n kube-system $pod; done
+
+	kubectl get pods -n nexus --no-headers 2>/dev/null | awk '{ print $1 }' | while read pod; do
+		sep2 $pod ${FUNCNAME[0]}
+		kubectl logs $pod -n nexus 2>&1
+	done
 
 	kubectl get pods --no-headers 2>/dev/null | awk '{ print $1 }' | while read pod; do
 		sep2 $pod ${FUNCNAME[0]}
@@ -237,6 +255,7 @@ gather() {
 	pods
 	endpoints
 	certificates
+	nexus
 	logs
 	swmfs $*
 }
