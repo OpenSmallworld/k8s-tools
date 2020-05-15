@@ -71,7 +71,7 @@ manifest() {
 	cat $1	
 
 	sep2 nexus_manifest.yaml
-	cat $(dirname $1)/nexus_manifest.yaml
+	cat $(dirname $1)/nexus/nexus_manifest.yaml
 }
 
 sep() {
