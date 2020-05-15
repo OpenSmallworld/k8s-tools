@@ -1,4 +1,4 @@
-VER=7
+VER=8
 
 ex() {
 
@@ -66,7 +66,12 @@ swmfs() {
 manifest() {
 
 	sep ${FUNCNAME[0]}
+
+	sep2 pdc_input_manifest.yaml
 	cat $1	
+
+	sep2 nexus_manifest.yaml
+	cat $(dirname $1)/nexus_manifest.yaml
 }
 
 sep() {
