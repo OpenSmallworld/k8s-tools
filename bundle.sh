@@ -69,9 +69,11 @@ manifest() {
 
 	sep2 pdc_input_manifest.yaml
 	cat $1	
+	echo
 
 	sep2 nexus_manifest.yaml
 	cat $(dirname $1)/nexus/nexus_manifest.yaml
+	echo
 }
 
 sep() {
