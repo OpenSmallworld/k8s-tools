@@ -1,4 +1,4 @@
-VER=8
+VER=9
 
 ex() {
 
@@ -67,11 +67,11 @@ manifest() {
 
 	sep ${FUNCNAME[0]}
 
-	sep2 pdc_input_manifest.yaml
+	sep2 pdc_input_manifest.yaml ${FUNCNAME[0]}
 	cat $1	
 	echo
 
-	sep2 nexus_manifest.yaml
+	sep2 nexus_manifest.yaml ${FUNCNAME[0]}
 	cat $(dirname $1)/nexus/nexus_manifest.yaml
 	echo
 }
@@ -84,7 +84,7 @@ sep() {
 }
 
 sep2() {
-	echo ":------ $1 $2"
+	echo ":------ $1 - $2"
 	echo ''
 }
 
@@ -158,26 +158,35 @@ process() {
 
 files() {
 	sep ${FUNCNAME[0]}
-	sep2 hosts
+	sep2 hosts ${FUNCNAME[0]}
 	cat /etc/hosts
 	echo
 
-	sep2 exports
+	sep2 exports ${FUNCNAME[0]}
 	if [[ -f /etc/exports ]]; then
 		cat /etc/exports
 	fi
 	echo
 
-	sep2 daemon.json
+	sep2 daemon.json ${FUNCNAME[0]}
 	cat /etc/docker/daemon.json
 	echo
 }
 
 info() {
 	sep ${FUNCNAME[0]}
-	docker version
+	sep2 "kubectl version" ${FUNCNAME[0]}
 	kubectl version
+	echo
+	sep2 "docker version" ${FUNCNAME[0]}
+	docker version
+	echo
+	sep2 "docker info" ${FUNCNAME[0]}
 	docker info 2>&1
+	echo
+	sep2 "docker images" ${FUNCNAME[0]}
+	docker images
+	echo
 }
 
 nodes() {
