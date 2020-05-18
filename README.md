@@ -2,17 +2,26 @@
 
 Scripts to aid/diagnose GSS on Kubernetes installations.
 
-## bundle.sh
+## Installation
+
+```bash
+git clone https://github.com/OpenSmallworld/k8s-tools.git
+git checkout <version> # v523, v522, v521 etc
+```
+
+## Scripts
+
+### bundle.sh
 
 Gather data into a support "bundle" for diagnosing issues.
 
-### Usage
+#### Usage
 
 ```bash
  bash bundle.sh </path/to/pdc_input_manifest.yaml>
 ```
 
-### Example
+#### Example
 
 ```bash
 [root@k8s k8s-tools]# bash bundle.sh /opt/sw/kubernetes_scripts/pdc_input_manifest.yaml
