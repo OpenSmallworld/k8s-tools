@@ -1,4 +1,4 @@
-VER=9
+VER=10
 
 ex() {
 
@@ -100,6 +100,8 @@ basic() {
 	else
 		echo "hostnamectl not present"
 	fi
+	echo
+	uptime
 	echo
 }
 
@@ -278,7 +280,7 @@ gather() {
 
 path=$1
 
-if [[ -z "$path" || ! -f "$path" ]]; then
+if [[ -z $path || ! -f $path ]]; then
 	echo -e "\nUsage: $0 </path/to/pdc_input_manifest.yaml>"
 	exit 1
 fi

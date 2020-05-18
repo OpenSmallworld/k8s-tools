@@ -4,9 +4,17 @@ Scripts to aid/diagnose GSS on Kubernetes installations.
 
 ## Installation
 
+### Initial installation
+
 ```bash
 git clone https://github.com/OpenSmallworld/k8s-tools.git
 git checkout <version> # v523, v522, v521 etc
+```
+
+### Update installation
+
+```bash
+git pull
 ```
 
 ## Scripts
