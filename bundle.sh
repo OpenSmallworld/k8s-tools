@@ -1,4 +1,4 @@
-VER=10
+VER=11
 
 ex() {
 
@@ -256,6 +256,15 @@ logs() {
 	done
 }
 
+services() {
+	sep ${FUNCNAME[0]}
+
+	kubectl get namespace --no-headers 2>/dev/null | awk '{ print $1 }' | while read ns; do
+		sep2 $ns ${FUNCNAME[0]}
+		kubectl get service -n $ns -o wide 2>&1
+	done
+}
+
 gather() {
 	path=$1
 	shift
@@ -274,6 +283,7 @@ gather() {
 	endpoints
 	certificates
 	nexus
+	services
 	logs
 	swmfs $*
 }
@@ -309,7 +319,6 @@ osds_path=${osds_root_dir:-/osds_data}
 	echo "version $VER"
 	gather $path $message_dir_path $ace_dir_path 
 	sep 'end bundle'
-#) | tee info.txt
 ) >info.txt
 
 echo '' # terminate progress indicator line
