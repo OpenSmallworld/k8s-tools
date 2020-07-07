@@ -261,7 +261,7 @@ services() {
 
 	kubectl get namespace --no-headers 2>/dev/null | awk '{ print $1 }' | while read ns; do
 		sep2 $ns ${FUNCNAME[0]}
-		kubectl describe service -n $ns 
+		kubectl describe service -n $ns 2>&1
 		echo ''
 	done
 }
