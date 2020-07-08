@@ -1,4 +1,4 @@
-VER=11
+VER=12
 
 ex() {
 
@@ -253,6 +253,12 @@ logs() {
 	kubectl get pods --no-headers 2>/dev/null | awk '{ print $1 }' | while read pod; do
 		sep2 $pod ${FUNCNAME[0]}
 		kubectl logs $pod 2>&1
+	done
+
+	# get the previous log of any non-running pods
+	kubectl get po --no-headers 2>/dev/null | grep -vE '(Running|Completed)' | awk '{ print $1 }' | while read pod; do 
+		sep2 $pod ${FUNCNAME[0]}
+		kubectl logs $pod --previous 2>&1
 	done
 }
 
