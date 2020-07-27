@@ -46,6 +46,7 @@ swmfs() {
   ex $pod $swmfs_test 13 $message message.ds
   echo '----------------------------------------------------------------------'
   echo Validate licence
+  # problems running directly, so write a small script and execute that in the pod instead
   echo "SW_LICENCE_DB=$message/message.ds $swlm_clerk -o" > /tmp/$$
   kubectl cp /tmp/$$ $pod:/tmp/$$
   #cmd="\"SW_LICENCE_DB=$message/message.ds; $swlm_clerk -o\""
@@ -78,14 +79,14 @@ manifest() {
 
 sep() {
 	>&2 echo -n '.' 
-	echo ''
+	echo
 	echo ":--- $1"
-	echo ''
+	echo
 }
 
 sep2() {
 	echo ":------ $1 - $2"
-	echo ''
+	echo
 }
 
 basic() {
@@ -239,20 +240,45 @@ logs() {
 	sep ${FUNCNAME[0]}
 
 	# core-dns 
-	for pod in $(kubectl get pods -o name -n kube-system -l k8s-app=kube-dns); do sep2 $pod ${FUNCNAME[0]};  kubectl logs -n kube-system $pod; done
-	#flannel
-	for pod in $(kubectl get pods -o name -n kube-system -l app=flannel); do sep2 $pod ${FUNCNAME[0]};  kubectl logs -n kube-system $pod; done
-	#kube-proxy
-	for pod in $(kubectl get pods -o name -n kube-system -l k8s-app=kube-proxy); do sep2 $pod ${FUNCNAME[0]};  kubectl logs -n kube-system $pod; done
+	for pod in $(kubectl get pods -o name -n kube-system -l k8s-app=kube-dns); do 
+		sep2 $pod ${FUNCNAME[0]}
+		kubectl logs -n kube-system $pod
+		echo
+	done
 
+	#flannel
+	for pod in $(kubectl get pods -o name -n kube-system -l app=flannel); do 
+		sep2 $pod ${FUNCNAME[0]}
+		kubectl logs -n kube-system $pod
+		echo
+	done
+
+	#kube-proxy
+	for pod in $(kubectl get pods -o name -n kube-system -l k8s-app=kube-proxy); do 
+		sep2 $pod ${FUNCNAME[0]}
+		kubectl logs -n kube-system $pod
+		echo
+	done
+
+	# nexus
 	kubectl get pods -n nexus --no-headers 2>/dev/null | awk '{ print $1 }' | while read pod; do
 		sep2 $pod ${FUNCNAME[0]}
 		kubectl logs $pod -n nexus 2>&1
+		echo
 	done
 
+	# default namespace (gss-prod)
 	kubectl get pods --no-headers 2>/dev/null | awk '{ print $1 }' | while read pod; do
 		sep2 $pod ${FUNCNAME[0]}
 		kubectl logs $pod 2>&1
+		echo
+	done
+
+	# get the previous log of any non-running pods in default namespace (gss-prod)
+	kubectl get po --no-headers 2>/dev/null | grep -vE '(Running|Completed)' | awk '{ print $1 }' | while read pod; do 
+		sep2 $pod ${FUNCNAME[0]}
+		kubectl logs $pod --previous 2>&1
+		echo
 	done
 
 	# get the previous log of any non-running pods
@@ -268,7 +294,7 @@ services() {
 	kubectl get namespace --no-headers 2>/dev/null | awk '{ print $1 }' | while read ns; do
 		sep2 $ns ${FUNCNAME[0]}
 		kubectl describe service -n $ns 2>&1
-		echo ''
+		echo
 	done
 }
 
@@ -393,4 +419,4 @@ tar -${args}cf $file $files
 
 ls -lh $file
 
-echo -e "\nPlease provide $file with any support tickets."
+echo -e "\nAlways provide info.txt with any support tickets. $file is only required when requested."
