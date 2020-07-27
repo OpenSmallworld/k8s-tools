@@ -1,4 +1,4 @@
-VER=12
+VER=13
 
 ex() {
 
@@ -295,12 +295,49 @@ gather() {
 	swmfs $*
 }
 
-path=$1
+usage() {
+	echo -e "\nUsage: $0\n\t</path/to/pdc_input_manifest.yaml>\n\t-h|--help"
+	exit 1
+}
 
-if [[ -z $path || ! -f $path ]]; then
-	echo -e "\nUsage: $0 </path/to/pdc_input_manifest.yaml>"
+# avoid permissions errors
+if [[ $(id -u) -ne 0 ]]; then
+	echo "*** Error: Running as user $(logname) not as root/sudo user"
 	exit 1
 fi
+
+path=$1
+nobundle=false
+
+if [[ -z $path || ! -f $path ]]; then
+	usage
+fi
+
+shift
+
+while [[ $# -gt 0 ]]
+do
+  key="$1"
+
+  case $key in
+    -A|--all)
+      nobundle=true
+      shift
+      ;;
+    -z|--no-bundle)
+      nobundle=true
+      shift
+      ;;
+    -h|--help)
+      usage
+      exit
+      ;;
+    *)
+      echo -e "Do no understand argument \"$key\"\n"
+      usage
+      exit
+  esac
+done
 
 message_dir_path=$(grep MESSAGES_DIR_PATH $path | cut -f2 -d"'" | cut -f1 -d"'")
 ace_dir_path=$(grep ACE_DIR_PATH $path | cut -f2 -d"'" | cut -f1 -d"'")
