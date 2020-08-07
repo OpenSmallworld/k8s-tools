@@ -1,4 +1,4 @@
-VER=13
+VER=14
 
 ex() {
 
@@ -267,22 +267,22 @@ logs() {
 		echo
 	done
 
-	# default namespace (gss-prod)
-	kubectl get pods --no-headers 2>/dev/null | awk '{ print $1 }' | while read pod; do
+	# gss-prod
+	kubectl get pods -n gss-prod --no-headers 2>/dev/null | awk '{ print $1 }' | while read pod; do
 		sep2 $pod ${FUNCNAME[0]}
 		kubectl logs $pod 2>&1
 		echo
 	done
 
-	# get the previous log of any non-running pods in default namespace (gss-prod)
-	kubectl get po --no-headers 2>/dev/null | grep -vE '(Running|Completed)' | awk '{ print $1 }' | while read pod; do 
+	# get the previous log of any non-running pods in nexus namespace
+	kubectl get pods -n nexus --no-headers 2>/dev/null | grep -vE '(Running|Completed)' | awk '{ print $1 }' | while read pod; do 
 		sep2 $pod ${FUNCNAME[0]}
 		kubectl logs $pod --previous 2>&1
 		echo
 	done
 
-	# get the previous log of any non-running pods
-	kubectl get po --no-headers 2>/dev/null | grep -vE '(Running|Completed)' | awk '{ print $1 }' | while read pod; do 
+	# get the previous log of any non-running pods in gss-prod namespace
+	kubectl get pods -n gss-prod --no-headers 2>/dev/null | grep -vE '(Running|Completed)' | awk '{ print $1 }' | while read pod; do 
 		sep2 $pod ${FUNCNAME[0]}
 		kubectl logs $pod --previous 2>&1
 	done
