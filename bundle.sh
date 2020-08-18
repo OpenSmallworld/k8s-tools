@@ -20,7 +20,7 @@ swmfs() {
 	return
   fi
 
-  pod=$(kubectl get po --no-headers | grep Running | grep "1/1" | awk '!/client-deployment|nexus|bifrost|postgres|uaa|solr|ingress|rabbitmq/ { print $1 }' | head -n 1)
+  pod=$(kubectl get po -n gss-prod --no-headers | grep Running | grep "1/1" | awk '!/client-deployment|nexus|bifrost|postgres|uaa|solr|ingress|rabbitmq/ { print $1 }' | head -n 1)
 
   echo '----------------------------------------------------------------------'
   # this is a ping from the master not the node. 
