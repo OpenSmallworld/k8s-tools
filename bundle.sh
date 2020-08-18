@@ -1,11 +1,13 @@
 VER=15
 
+namespace='gss-prod'
+
 ex() {
 
   pod=$1
   shift
 
-  (kubectl exec $pod -- $*) 2>&1
+  (kubectl exec -n $namespace $pod -- $*) 2>&1
 }
 
 swmfs() {
@@ -20,7 +22,7 @@ swmfs() {
 	return
   fi
 
-  pod=$(kubectl get po -n gss-prod --no-headers | grep Running | grep "1/1" | awk '!/client-deployment|nexus|bifrost|postgres|uaa|solr|ingress|rabbitmq|gdal/ { print $1 }' | head -n 1)
+  pod=$(kubectl get po -n $namespace --no-headers | grep Running | grep "1/1" | awk '!/client-deployment|nexus|bifrost|postgres|uaa|solr|ingress|rabbitmq|gdal/ { print $1 }' | head -n 1)
 
   echo '----------------------------------------------------------------------'
   # this is a ping from the master not the node. 
@@ -48,7 +50,7 @@ swmfs() {
   echo Validate licence
   # problems running directly, so write a small script and execute that in the pod instead
   echo "SW_LICENCE_DB=$message/message.ds $swlm_clerk -o" > /tmp/$$
-  kubectl cp /tmp/$$ $pod:/tmp/$$
+  kubectl -n $namespace cp /tmp/$$ $pod:/tmp/$$
   #cmd="\"SW_LICENCE_DB=$message/message.ds; $swlm_clerk -o\""
   ex $pod bash /tmp/$$
   ex $pod rm /tmp/$$
@@ -268,9 +270,9 @@ logs() {
 	done
 
 	# gss-prod
-	kubectl get pods -n gss-prod --no-headers 2>/dev/null | awk '{ print $1 }' | while read pod; do
+	kubectl get pods -n $namespace --no-headers 2>/dev/null | awk '{ print $1 }' | while read pod; do
 		sep2 $pod ${FUNCNAME[0]}
-		kubectl logs -n gss-prod $pod 2>&1
+		kubectl logs -n $namespace $pod 2>&1
 		echo
 	done
 
@@ -282,9 +284,9 @@ logs() {
 	done
 
 	# get the previous log of any non-running pods in gss-prod namespace
-	kubectl get pods -n gss-prod --no-headers 2>/dev/null | grep -vE '(Running|Completed)' | awk '{ print $1 }' | while read pod; do 
+	kubectl get pods -n $namespace --no-headers 2>/dev/null | grep -vE '(Running|Completed)' | awk '{ print $1 }' | while read pod; do 
 		sep2 $pod ${FUNCNAME[0]}
-		kubectl logs -n gss-prod $pod --previous 2>&1
+		kubectl logs -n $namespace $pod --previous 2>&1
 	done
 }
 
@@ -350,6 +352,10 @@ do
       nobundle=false
       shift
       ;;
+	-n|--namespace)
+	  namespace=$2
+	  shift; shift
+	  ;;
     -z|--no-bundle)
       nobundle=true
       shift
@@ -428,7 +434,7 @@ fi
 echo -e "\nAlways provide info.txt with any support tickets.\c"
 
 if ! $nobundle; then
-	echo " $file is only required when requested.\c"
+	echo -e " $file is only required when requested.\c"
 fi
 
 echo -e "\n"
