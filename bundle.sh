@@ -1,4 +1,4 @@
-VER=14
+VER=15
 
 ex() {
 
@@ -239,7 +239,7 @@ nexus() {
 logs() {
 	sep ${FUNCNAME[0]}
 
-	# core-dns 
+	# kube-dns 
 	for pod in $(kubectl get pods -o name -n kube-system -l k8s-app=kube-dns); do 
 		sep2 $pod ${FUNCNAME[0]}
 		kubectl logs -n kube-system $pod
@@ -263,28 +263,28 @@ logs() {
 	# nexus
 	kubectl get pods -n nexus --no-headers 2>/dev/null | awk '{ print $1 }' | while read pod; do
 		sep2 $pod ${FUNCNAME[0]}
-		kubectl logs $pod -n nexus 2>&1
+		kubectl logs -n nexus $pod 2>&1
 		echo
 	done
 
 	# gss-prod
 	kubectl get pods -n gss-prod --no-headers 2>/dev/null | awk '{ print $1 }' | while read pod; do
 		sep2 $pod ${FUNCNAME[0]}
-		kubectl logs $pod 2>&1
+		kubectl logs -n gss-prod $pod 2>&1
 		echo
 	done
 
 	# get the previous log of any non-running pods in nexus namespace
 	kubectl get pods -n nexus --no-headers 2>/dev/null | grep -vE '(Running|Completed)' | awk '{ print $1 }' | while read pod; do 
 		sep2 $pod ${FUNCNAME[0]}
-		kubectl logs $pod --previous 2>&1
+		kubectl logs -n nexus $pod --previous 2>&1
 		echo
 	done
 
 	# get the previous log of any non-running pods in gss-prod namespace
 	kubectl get pods -n gss-prod --no-headers 2>/dev/null | grep -vE '(Running|Completed)' | awk '{ print $1 }' | while read pod; do 
 		sep2 $pod ${FUNCNAME[0]}
-		kubectl logs $pod --previous 2>&1
+		kubectl logs -n gss-prod $pod --previous 2>&1
 	done
 }
 
@@ -354,6 +354,10 @@ do
       nobundle=true
       shift
       ;;
+	-D|--debug)
+	  set -x
+	  shift
+	  ;;
     -h|--help)
       usage
       exit
