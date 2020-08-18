@@ -15,7 +15,7 @@ swmfs() {
 
   sep ${FUNCNAME[0]}
 
-  if [[ -z $message -o -z $ace ]]; then
+  if [[ -z $message || -z $ace ]]; then
 	echo "MESSAGES_DB_DIR and/or ACE_DB_DIR is unset"
 	return
   fi
@@ -428,5 +428,7 @@ fi
 echo -e "\nAlways provide info.txt with any support tickets.\c"
 
 if ! $nobundle; then
-	echo " $file is only required when requested."
+	echo " $file is only required when requested.\c"
 fi
+
+echo -e "\n"
