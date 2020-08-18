@@ -347,7 +347,7 @@ do
 
   case $key in
     -A|--all)
-      nobundle=true
+      nobundle=false
       shift
       ;;
     -z|--no-bundle)
@@ -405,22 +405,28 @@ else
 	suffix=
 fi
 
-now=$(date --utc +%Y%m%d_%H%M%SZ)
-file=bundle_${now}.tar${suffix}
+if ! $nobundle; then
+	now=$(date --utc +%Y%m%d_%H%M%SZ)
+	file=bundle_${now}.tar${suffix}
 
-files="info.txt"
+	files="info.txt"
 
-if [[ -d $root_path ]]; then
-	files="$files $root_path"
+	if [[ -d $root_path ]]; then
+		files="$files $root_path"
+	fi
+
+	if [[ -d $osds_path ]]; then
+		files="$files $osds_path"
+	fi
+
+	echo Generating bundle $file
+	tar -${args}cf $file $files
+
+	ls -lh $file
 fi
 
-if [[ -d $osds_path ]]; then
-	files="$files $osds_path"
+echo -e "\nAlways provide info.txt with any support tickets.\c"
+
+if ! $nobundle; then
+	echo " $file is only required when requested."
 fi
-
-echo Generating bundle $file
-tar -${args}cf $file $files
-
-ls -lh $file
-
-echo -e "\nAlways provide info.txt with any support tickets. $file is only required when requested."
