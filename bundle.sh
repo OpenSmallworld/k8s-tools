@@ -15,12 +15,12 @@ swmfs() {
 
   sep ${FUNCNAME[0]}
 
-  if [ -z "$message" -o -z "$ace" ]; then
+  if [[ -z $message -o -z $ace ]]; then
 	echo "MESSAGES_DB_DIR and/or ACE_DB_DIR is unset"
 	return
   fi
 
-  pod=$(kubectl get po -n gss-prod --no-headers | grep Running | grep "1/1" | awk '!/client-deployment|nexus|bifrost|postgres|uaa|solr|ingress|rabbitmq/ { print $1 }' | head -n 1)
+  pod=$(kubectl get po -n gss-prod --no-headers | grep Running | grep "1/1" | awk '!/client-deployment|nexus|bifrost|postgres|uaa|solr|ingress|rabbitmq|gdal/ { print $1 }' | head -n 1)
 
   echo '----------------------------------------------------------------------'
   # this is a ping from the master not the node. 
@@ -30,7 +30,7 @@ swmfs() {
   #ex $pod ping $ip -c 3
   ping $ip -c 3
 
-  if [[ -z "$pod" ]]; then
+  if [[ -z $pod ]]; then
     echo "No running pod found to check swmfs"
     return
   fi
