@@ -8,3 +8,4 @@ org.sonatype.nexus.tasklog.TaskLogCleanup
 org.sonatype.nexus.extender.NexusBundleTracker
 You should at some point declare and reindex to at least 6.0, because 5.x emulation is deprecated and will be removed in 7.0
 Service ".*/.*" does not have any active Endpoint.
+^{"type":"SWLogData"
