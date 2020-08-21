@@ -330,7 +330,7 @@ usage() {
 
 # avoid permissions errors
 if [[ $(id -u) -ne 0 ]]; then
-	echo "*** Error: Running as user $(logname) not as root/sudo user"
+	echo "*** Error: Running as user $USER not as root/sudo user"
 	exit 1
 fi
 
