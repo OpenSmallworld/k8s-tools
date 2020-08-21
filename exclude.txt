@@ -12,3 +12,4 @@ Service ".*/.*" does not have any active Endpoint.
 ^{"@timestamp":".*","sw_log":{"name":"message","module":"gss","session":null,"class":"info"},"type":"SWLogData"
 \[gis_index\]  webapp=/solr path=/update/json
 \[gis_index\] Registered new searcher
+org.sonatype.nexus.security.PasswordHelper - Value appears to be already decrypted
