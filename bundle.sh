@@ -435,10 +435,12 @@ if ! $nobundle; then
 	ls -lh $file
 fi
 
-echo -e "\nAlways provide info.txt with any support tickets. info-complete.txt is not required.\c"
+echo -e "\nAlways provide info.txt with any support tickets. \c"
 
-if ! $nobundle; then
-	echo -e " $file is only required when requested.\c"
+if $nobundle; then
+ 	echo -e "info-complete.txt is not required.\c"
+else
+	echo -e "$file is only required when requested.\c"
 fi
 
 echo -e "\n"
