@@ -1,0 +1,10 @@
+Event\(v1.ObjectReference{Kind:"Ingress", Namespace:".*"
+Error getting SSL certificate "nexus/nexus-tls":
+updating Ingress .*/.* status
+org.sonatype.nexus.quartz.internal.task.QuartzTaskInfo
+org.apache.shiro.session.mgt.AbstractValidatingSessionManager
+org.sonatype.nexus.tasklog.TaskLogCleanup
+"POST /service/extdirect/poll/rapture_State_get HTTP/2.0"
+org.sonatype.nexus.extender.NexusBundleTracker
+You should at some point declare and reindex to at least 6.0, because 5.x emulation is deprecated and will be removed in 7.0
+Service ".*/.*" does not have any active Endpoint.

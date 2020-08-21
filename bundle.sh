@@ -1,4 +1,4 @@
-VER=15
+VER=16
 
 namespace='gss-prod'
 
@@ -87,7 +87,7 @@ sep() {
 }
 
 sep2() {
-	echo ":------ $1 - $2"
+	echo ":------ $1 -- $2"
 	echo
 }
 
@@ -278,14 +278,14 @@ logs() {
 
 	# get the previous log of any non-running pods in nexus namespace
 	kubectl get pods -n nexus --no-headers 2>/dev/null | grep -vE '(Running|Completed)' | awk '{ print $1 }' | while read pod; do 
-		sep2 $pod ${FUNCNAME[0]}
+		sep2 $pod "${FUNCNAME[0]} -- previous"
 		kubectl logs -n nexus $pod --previous 2>&1
 		echo
 	done
 
 	# get the previous log of any non-running pods in gss-prod namespace
 	kubectl get pods -n $namespace --no-headers 2>/dev/null | grep -vE '(Running|Completed)' | awk '{ print $1 }' | while read pod; do 
-		sep2 $pod ${FUNCNAME[0]}
+		sep2 $pod "${FUNCNAME[0]} -- previous"
 		kubectl logs -n $namespace $pod --previous 2>&1
 	done
 }
@@ -399,7 +399,11 @@ osds_path=${osds_root_dir:-/osds_data}
 	echo "version $VER"
 	gather $path $message_dir_path $ace_dir_path 
 	sep 'end bundle'
-) >info.txt
+) >info-complete.txt
+
+dir=$(dirname "$(readlink -f "$0")")
+
+cat info-complete.txt | grep -Evf $dir/exclude.txt > info.txt
 
 echo '' # terminate progress indicator line
 
@@ -415,7 +419,7 @@ if ! $nobundle; then
 	now=$(date --utc +%Y%m%d_%H%M%SZ)
 	file=bundle_${now}.tar${suffix}
 
-	files="info.txt"
+	files="info.txt info-complete.txt"
 
 	if [[ -d $root_path ]]; then
 		files="$files $root_path"
@@ -431,7 +435,7 @@ if ! $nobundle; then
 	ls -lh $file
 fi
 
-echo -e "\nAlways provide info.txt with any support tickets.\c"
+echo -e "\nAlways provide info.txt with any support tickets. info-complete.txt is not required.\c"
 
 if ! $nobundle; then
 	echo -e " $file is only required when requested.\c"
