@@ -404,7 +404,7 @@ osds_path=${osds_root_dir:-/osds_data}
 dir=$(dirname "$(readlink -f "$0")")
 
 #cat info-complete.txt | grep -Evf $dir/exclude.txt > info.txt # some observed issues with excluding text
-mv info-complete,txt info.txt
+mv info-complete.txt info.txt
 
 echo '' # terminate progress indicator line
 
