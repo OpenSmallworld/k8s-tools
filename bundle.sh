@@ -1,4 +1,4 @@
-VER=17
+VER=18
 
 namespace='gss-prod'
 
@@ -48,12 +48,7 @@ swmfs() {
   ex $pod $swmfs_test 13 $message message.ds
   echo '----------------------------------------------------------------------'
   echo Validate licence
-  # problems running directly, so write a small script and execute that in the pod instead
-  echo "SW_LICENCE_DB=$message/message.ds $swlm_clerk -o" > /tmp/$$
-  kubectl -n $namespace cp /tmp/$$ $pod:/tmp/$$
-  #cmd="\"SW_LICENCE_DB=$message/message.ds; $swlm_clerk -o\""
-  ex $pod bash /tmp/$$
-  ex $pod rm /tmp/$$
+  ex $pod bash -c "SW_LICENCE_DB=$message/message.ds $swlm_clerk -o"
   echo '----------------------------------------------------------------------'
   echo Validate directory $ace
   ex $pod $swmfs_test 22 $ace *.ds
@@ -74,9 +69,37 @@ manifest() {
 	cat $1	
 	echo
 
-	sep2 nexus_manifest.yaml ${FUNCNAME[0]}
-	cat $(dirname $1)/nexus/nexus_manifest.yaml
-	echo
+	if [[ -f $(dirname $1)/nexus/nexus_manifest.yaml ]]; then
+		sep2 nexus_manifest.yaml ${FUNCNAME[0]}
+		cat $(dirname $1)/nexus/nexus_manifest.yaml
+		echo
+	else
+		echo "$(dirname $1)/nexus/nexus_manifest.yaml missing"
+	fi
+
+	if [[ -f $(dirname $1)/local_storage_provisioner_manifest.yaml ]]; then
+		sep2 local_storage_provisioner_manifest.yaml ${FUNCNAME[0]}
+		cat $(dirname $1)/local_storage_provisioner_manifest.yaml
+		echo
+	else
+		echo "$(dirname $1)/local_storage_provisioner_manifest.yaml missing"
+	fi
+
+	if [[ -f $(dirname $1)/nfs_storage_provisioner_manifest.yaml ]]; then
+		sep2 nfs_storage_provisioner_manifest.yaml ${FUNCNAME[0]}
+		cat $(dirname $1)/nfs_storage_provisioner_manifest.yaml
+		echo
+	else
+		echo "$(dirname $1)/nfs_storage_provisioner_manifest.yaml missing"
+	fi
+
+	if [[ -f $(dirname $1)/nginx_ingress_controller_manifest.yaml ]]; then
+		sep2 nginx_ingress_controller_manifest.yaml ${FUNCNAME[0]}
+		cat $(dirname $1)/nginx_ingress_controller_manifest.yaml
+		echo
+	else	
+		echo "$(dirname $1)/nginx_ingress_controller_manifest.yaml missing"
+	fi
 }
 
 sep() {
@@ -420,7 +443,15 @@ if ! $nobundle; then
 	now=$(date --utc +%Y%m%d_%H%M%SZ)
 	file=bundle_${now}.tar${suffix}
 
-	files="info.txt info-complete.txt"
+	files = ""
+
+	if [[ -f info.txt ]]; then
+		files="$files info.txt"
+	fi
+
+	if [[ -f info-complete.txt ]]; then
+		files="$files info-complete.txt"
+	fi
 
 	if [[ -d $root_path ]]; then
 		files="$files $root_path"
