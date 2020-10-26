@@ -443,7 +443,7 @@ if ! $nobundle; then
 	now=$(date --utc +%Y%m%d_%H%M%SZ)
 	file=bundle_${now}.tar${suffix}
 
-	files = ""
+	files=""
 
 	if [[ -f info.txt ]]; then
 		files="$files info.txt"
