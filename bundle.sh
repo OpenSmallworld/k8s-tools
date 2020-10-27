@@ -1,4 +1,4 @@
-VER=18
+VER=19
 
 namespace='gss-prod'
 
@@ -404,7 +404,7 @@ modelit_dir_path=$(grep MODELIT_DIR_PATH $path | cut -f2 -d"'" | cut -f1 -d"'")
 storage_type=$(grep STORAGE_TYPE $path | cut -f2 -d"'" | cut -f1 -d"'")
 root_hostdir_path=$(grep ROOT_HOSTPATH_DIR $path | cut -f2 -d"'" | cut -f1 -d"'")
 root_shared_path=$(grep ROOT_SHARED_DIR $path | cut -f2 -d"'" | cut -f1 -d"'")
-osds_root_dir=$(grep OSDS_ROOT_DIR $path | cut -f2 -d"'" | cut -f1 -d"'")
+osds_root_dir=$(grep local_dir_mount_path $path | cut -f2 -d"'" | cut -f1 -d"'")
 
 ace_dir_path=${modelit_dir_path:-$ace_dir_path}
 
