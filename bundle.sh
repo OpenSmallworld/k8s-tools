@@ -1,6 +1,6 @@
 VER=19
 
-namespace='gss-prod'
+namespace='gss-prod' # default
 
 ex() {
 
@@ -72,7 +72,7 @@ manifest() {
 	if [[ -f $(dirname $1)/nexus/nexus_manifest.yaml ]]; then
 		sep2 nexus_manifest.yaml ${FUNCNAME[0]}
 		cat $(dirname $1)/nexus/nexus_manifest.yaml
-		echo
+		echo -e '\n\n'
 	else
 		echo "$(dirname $1)/nexus/nexus_manifest.yaml missing"
 	fi
@@ -80,7 +80,7 @@ manifest() {
 	if [[ -f $(dirname $1)/local_storage_provisioner_manifest.yaml ]]; then
 		sep2 local_storage_provisioner_manifest.yaml ${FUNCNAME[0]}
 		cat $(dirname $1)/local_storage_provisioner_manifest.yaml
-		echo
+		echo -e '\n\n'
 	else
 		echo "$(dirname $1)/local_storage_provisioner_manifest.yaml missing"
 	fi
@@ -88,7 +88,7 @@ manifest() {
 	if [[ -f $(dirname $1)/nfs_storage_provisioner_manifest.yaml ]]; then
 		sep2 nfs_storage_provisioner_manifest.yaml ${FUNCNAME[0]}
 		cat $(dirname $1)/nfs_storage_provisioner_manifest.yaml
-		echo
+		echo -e '\n\n'
 	else
 		echo "$(dirname $1)/nfs_storage_provisioner_manifest.yaml missing"
 	fi
@@ -96,7 +96,7 @@ manifest() {
 	if [[ -f $(dirname $1)/nginx_ingress_controller_manifest.yaml ]]; then
 		sep2 nginx_ingress_controller_manifest.yaml ${FUNCNAME[0]}
 		cat $(dirname $1)/nginx_ingress_controller_manifest.yaml
-		echo
+		echo -e '\n\n'
 	else	
 		echo "$(dirname $1)/nginx_ingress_controller_manifest.yaml missing"
 	fi
