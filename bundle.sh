@@ -269,6 +269,9 @@ certificates() {
 
 	if [[ ! -z $(which curl) ]]; then
 		echo curl -v --cacert=$osds_root_dir/ssl/ca/ca.cert.pem https://$(hostname):30443
+		no_proxy=$(hostname),$no_proxy curl -v --cacert=$osds_root_dir/ssl/ca/ca.cert.pem https://$(hostname):30443/ 2>&1
+		echo
+		echo curl -v -k https://$(hostname):30443
 		no_proxy=$(hostname),$no_proxy curl -v -k https://$(hostname):30443/ 2>&1
 		echo
 	else
@@ -276,8 +279,10 @@ certificates() {
 	fi
 
 	if [[ ! -z $(which openssl) ]]; then
+		echo
 		echo openssl x509 -in $osds_root_dir/ssl/cert/ssl.cert.pem -text -noout 
 		openssl x509 -in $osds_root_dir/ssl/cert/ssl.cert.pem -text -noout 2>&1
+		echo
 		echo
 		echo openssl x509 -in $osds_root_dir/ssl/ca/ca.cert.pem -text -noout 2>&1
 		openssl x509 -in $osds_root_dir/ssl/ca/ca.cert.pem -text -noout 2>&1
