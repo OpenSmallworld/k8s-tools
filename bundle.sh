@@ -13,9 +13,8 @@ ex2() {
 ex() {
 
   pod=$1
-  shift
   namespace=$2
-  shift
+  shift; shift
 
   id=$(kubectl get po -n $namespace $pod -o jsonpath='{.status.containerStatuses[0].containerID}' | cut -c 10-21)
   pid=$(docker inspect --format '{{ .State.Pid }}' $id)
@@ -64,14 +63,14 @@ swmfs() {
   ex2 $pod $swmfs_test 13 $message message.ds
   echo '----------------------------------------------------------------------'
   echo Validate licence
-  ex2 $pod bash -c "SW_LICENCE_DB=$message/message.ds $swlm_clerk -o"
+  ex2 $pod bash -c "(SW_LICENCE_DB=$message/message.ds $swlm_clerk -o) 2>&1"
   echo '----------------------------------------------------------------------'
   echo Validate directory $ace
   ex2 $pod $swmfs_test 22 $ace *.ds
   echo '----------------------------------------------------------------------'
   echo Validate access to $ace
-  ex2 $pod $swmfs_test 1 $ace $$.ds
-  ex2 $pod $swmfs_test 4 $ace $$.ds
+  ex2 $pod $swmfs_test 1 $ace bundle-$$.ds
+  ex2 $pod $swmfs_test 4 $ace bundle-$$.ds
   echo '----------------------------------------------------------------------'
   echo Validate access to ace.ds in $ace
   ex2 $pod $swmfs_test 23 $ace ace.ds 100
@@ -206,7 +205,6 @@ files() {
 	cat /etc/hosts
 	echo
 
-	sep ${FUNCNAME[0]}
 	sep2 resolv.conf ${FUNCNAME[0]}
 	cat /etc/resolv.conf
 	echo
