@@ -2,17 +2,19 @@ VER=20
 
 namespace='gss-prod' # default
 
-#ex() {
-#
-#  pod=$1
-#  shift
-#
-#  (kubectl exec -n $namespace $pod -- $*) 2>&1
-#}
+ex2() {
+
+  pod=$1
+  shift
+
+  (kubectl exec -n $namespace $pod -- $*) 2>&1
+}
 
 ex() {
 
   pod=$1
+  shift
+  namespace=$2
   shift
 
   id=$(kubectl get po -n $namespace $pod -o jsonpath='{.status.containerStatuses[0].containerID}' | cut -c 10-21)
@@ -38,7 +40,7 @@ swmfs() {
   echo '----------------------------------------------------------------------'
   ip=$(echo $message | awk -F: '{ print $1 }')
 
-  echo Ping $ip (from $(hostname))
+  echo "Ping $ip (from $(hostname))"
   ping $ip -c 3
   echo
 
@@ -47,8 +49,8 @@ swmfs() {
     return
   fi
 
-  echo Ping $ip (from $pod) 
-  ex $pod ping $ip -c 3
+  echo "Ping $ip (from $pod)"
+  ex $pod $namespace ping $ip -c 3
   echo
 
   swmfs_test=/Smallworld/core/bin/Linux.x86/swmfs_test
@@ -56,23 +58,23 @@ swmfs() {
 
   echo '----------------------------------------------------------------------'
   echo Validate directory $message
-  ex $pod $swmfs_test 22 $message *.ds
+  ex2 $pod $swmfs_test 22 $message *.ds
   echo '----------------------------------------------------------------------'
   echo Validate server using message.ds in $message
-  ex $pod $swmfs_test 13 $message message.ds
+  ex2 $pod $swmfs_test 13 $message message.ds
   echo '----------------------------------------------------------------------'
   echo Validate licence
-  ex $pod bash -c "SW_LICENCE_DB=$message/message.ds $swlm_clerk -o"
+  ex2 $pod bash -c "SW_LICENCE_DB=$message/message.ds $swlm_clerk -o"
   echo '----------------------------------------------------------------------'
   echo Validate directory $ace
-  ex $pod $swmfs_test 22 $ace *.ds
+  ex2 $pod $swmfs_test 22 $ace *.ds
   echo '----------------------------------------------------------------------'
   echo Validate access to $ace
-  ex $pod $swmfs_test 1 $ace $$.ds
-  ex $pod $swmfs_test 4 $ace $$.ds
+  ex2 $pod $swmfs_test 1 $ace $$.ds
+  ex2 $pod $swmfs_test 4 $ace $$.ds
   echo '----------------------------------------------------------------------'
   echo Validate access to ace.ds in $ace
-  ex $pod $swmfs_test 23 $ace ace.ds 100
+  ex2 $pod $swmfs_test 23 $ace ace.ds 100
 }
 
 manifest() {
@@ -353,6 +355,22 @@ services() {
 	done
 }
 
+bifrost() {
+  sep ${FUNCNAME[0]}
+
+  pod=$(kubectl get po -n $namespace --no-headers | grep Running | grep "1/1" | awk '/bifrost/ { print $1 }' | head -n 1)
+
+  if [[ -z $pod ]]; then
+    echo "No running pod found to check bifrost"
+    return
+  fi
+
+  sep2 "/etc/hosts on $pod" ${FUNCNAME[0]}
+
+  ex $pod $namespace cat /etc/hosts
+  echo
+}
+
 gather() {
 	path=$1
 	shift
@@ -374,6 +392,7 @@ gather() {
 	services
 	logs
 	swmfs $*
+	bifrost
 }
 
 usage() {
