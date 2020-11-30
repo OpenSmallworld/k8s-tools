@@ -267,6 +267,7 @@ certificates() {
 	sep ${FUNCNAME[0]}
 	sep2 bifrost ${FUNCNAME[0]}
 
+    hostname=$(hostname -f)
 	if [[ ! -z $(which curl) ]]; then
 		echo curl -v --cacert=$osds_root_dir/ssl/ca/ca.cert.pem https://$(hostname):30443
 		no_proxy=$(hostname),$no_proxy curl -v --cacert=$osds_root_dir/ssl/ca/ca.cert.pem https://$(hostname):30443/ 2>&1
