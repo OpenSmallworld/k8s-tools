@@ -267,13 +267,12 @@ certificates() {
 	sep ${FUNCNAME[0]}
 	sep2 bifrost ${FUNCNAME[0]}
 
-    hostname=$(hostname -f)
 	if [[ ! -z $(which curl) ]]; then
-		echo curl -v --cacert=$osds_root_dir/ssl/ca/ca.cert.pem https://$(hostname):30443
-		no_proxy=$(hostname),$no_proxy curl -v --cacert=$osds_root_dir/ssl/ca/ca.cert.pem https://$(hostname):30443/ 2>&1
+		echo curl -v --cacert $osds_root_dir/ssl/ca/ca.cert.pem https://$(hostname -f):30443
+		no_proxy=$(hostname -f),$no_proxy curl -v --cacert $osds_root_dir/ssl/ca/ca.cert.pem https://$(hostname -f):30443/ 2>&1
 		echo
-		echo curl -v -k https://$(hostname):30443
-		no_proxy=$(hostname),$no_proxy curl -v -k https://$(hostname):30443/ 2>&1
+		echo curl -v -k https://$(hostname -f):30443
+		no_proxy=$(hostname -f),$no_proxy curl -v -k https://$(hostname -f):30443/ 2>&1
 		echo
 	else
 		echo "*** WARNING: curl not installed"
