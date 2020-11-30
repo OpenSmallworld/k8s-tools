@@ -1,13 +1,24 @@
-VER=19
+VER=20
 
 namespace='gss-prod' # default
+
+#ex() {
+#
+#  pod=$1
+#  shift
+#
+#  (kubectl exec -n $namespace $pod -- $*) 2>&1
+#}
 
 ex() {
 
   pod=$1
   shift
 
-  (kubectl exec -n $namespace $pod -- $*) 2>&1
+  id=$(kubectl get po -n $namespace $pod -o jsonpath='{.status.containerStatuses[0].containerID}' | cut -c 10-21)
+  pid=$(docker inspect --format '{{ .State.Pid }}' $id)
+
+  (nsenter -t ${pid} -n $*) 2>&1
 }
 
 swmfs() {
@@ -25,17 +36,20 @@ swmfs() {
   pod=$(kubectl get po -n $namespace --no-headers | grep Running | grep "1/1" | awk '!/client-deployment|nexus|bifrost|postgres|uaa|solr|ingress|rabbitmq|gdal/ { print $1 }' | head -n 1)
 
   echo '----------------------------------------------------------------------'
-  # this is a ping from the master not the node. 
-  # our alpine image does not include ping. better than nothing
   ip=$(echo $message | awk -F: '{ print $1 }')
-  echo Ping $ip
-  #ex $pod ping $ip -c 3
+
+  echo Ping $ip (from $(hostname))
   ping $ip -c 3
+  echo
 
   if [[ -z $pod ]]; then
     echo "No running pod found to check swmfs"
     return
   fi
+
+  echo Ping $ip (from $pod) 
+  ex $pod ping $ip -c 3
+  echo
 
   swmfs_test=/Smallworld/core/bin/Linux.x86/swmfs_test
   swlm_clerk=/Smallworld/core/etc/Linux.x86/swlm_clerk
@@ -190,6 +204,11 @@ files() {
 	cat /etc/hosts
 	echo
 
+	sep ${FUNCNAME[0]}
+	sep2 resolv.conf ${FUNCNAME[0]}
+	cat /etc/resolv.conf
+	echo
+
 	sep2 exports ${FUNCNAME[0]}
 	if [[ -f /etc/exports ]]; then
 		cat /etc/exports
@@ -248,11 +267,22 @@ certificates() {
 	sep2 bifrost ${FUNCNAME[0]}
 
 	if [[ ! -z $(which curl) ]]; then
-		echo curl -v -k https://$(hostname):30443
+		echo curl -v --cacert=$osds_root_dir/ssl/ca/ca.cert.pem https://$(hostname):30443
 		no_proxy=$(hostname),$no_proxy curl -v -k https://$(hostname):30443/ 2>&1
 	else
 		echo "*** WARNING: curl not installed"
 	fi
+
+	if [[ ! -z $(which openssl) ]]; then
+		echo openssl x509 -in $osds_root_dir/ssl/cert/ssl.cert.pem -text -noout 
+		openssl x509 -in $osds_root_dir/ssl/cert/ssl.cert.pem -text -noout 2>&1
+		echo openssl x509 -in $osds_root_dir/ssl/ca/ca.cert.pem -text -noout 2>&1
+		openssl x509 -in $osds_root_dir/ssl/ca/ca.cert.pem -text -noout 2>&1
+	else
+		echo "*** WARNING: openssl not installed"
+	fi
+
+	# openssl x509 -in certificate.crt -text -noout
 }
 
 nexus() {
