@@ -63,7 +63,8 @@ swmfs() {
   ex2 $pod $swmfs_test 13 $message message.ds
   echo '----------------------------------------------------------------------'
   echo Validate licence
-  ex2 $pod bash -c "(SW_LICENCE_DB=$message/message.ds $swlm_clerk -o) 2>&1"
+  #ex2 $pod bash -c "(SW_LICENCE_DB=$message/message.ds $swlm_clerk -o) 2>&1"
+  ex2 $pod bash -c "SW_LICENCE_DB=$message/message.ds $swlm_clerk -o 2>&1"
   echo '----------------------------------------------------------------------'
   echo Validate directory $ace
   ex2 $pod $swmfs_test 22 $ace *.ds
@@ -394,7 +395,7 @@ gather() {
 }
 
 usage() {
-	echo -e "\nUsage: $0\n\t</path/to/pdc_input_manifest.yaml>\n\t-h|--help"
+	echo -e "\nUsage: $0\n\t</path/to/pdi_input_manifest.yaml>\n\t-h|--help"
 	exit 1
 }
 
