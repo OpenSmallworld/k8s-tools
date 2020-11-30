@@ -270,6 +270,7 @@ certificates() {
 	if [[ ! -z $(which curl) ]]; then
 		echo curl -v --cacert=$osds_root_dir/ssl/ca/ca.cert.pem https://$(hostname):30443
 		no_proxy=$(hostname),$no_proxy curl -v -k https://$(hostname):30443/ 2>&1
+		echo
 	else
 		echo "*** WARNING: curl not installed"
 	fi
@@ -277,13 +278,13 @@ certificates() {
 	if [[ ! -z $(which openssl) ]]; then
 		echo openssl x509 -in $osds_root_dir/ssl/cert/ssl.cert.pem -text -noout 
 		openssl x509 -in $osds_root_dir/ssl/cert/ssl.cert.pem -text -noout 2>&1
+		echo
 		echo openssl x509 -in $osds_root_dir/ssl/ca/ca.cert.pem -text -noout 2>&1
 		openssl x509 -in $osds_root_dir/ssl/ca/ca.cert.pem -text -noout 2>&1
+		echo
 	else
 		echo "*** WARNING: openssl not installed"
 	fi
-
-	# openssl x509 -in certificate.crt -text -noout
 }
 
 nexus() {
@@ -454,7 +455,8 @@ root_hostdir_path=$(grep ROOT_HOSTPATH_DIR $path | cut -f2 -d"'" | cut -f1 -d"'"
 root_shared_path=$(grep ROOT_SHARED_DIR $path | cut -f2 -d"'" | cut -f1 -d"'")
 osds_root_dir=$(grep local_dir_mount_path $path | cut -f2 -d"'" | cut -f1 -d"'")
 
-ace_dir_path=${modelit_dir_path:-$ace_dir_path}
+#ace_dir_path=${modelit_dir_path:-$ace_dir_path}
+ace_dir_path=${ace_dir_path:-$modelit_dir_path}
 
 if [[ $storage_type == "nfs" ]]; then
 	root_path=$root_shared_path
