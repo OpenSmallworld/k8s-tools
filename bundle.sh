@@ -1,13 +1,25 @@
-VER=19
+VER=20
 
 namespace='gss-prod' # default
 
-ex() {
+ex2() {
 
   pod=$1
   shift
 
   (kubectl exec -n $namespace $pod -- $*) 2>&1
+}
+
+ex() {
+
+  pod=$1
+  namespace=$2
+  shift; shift
+
+  id=$(kubectl get po -n $namespace $pod -o jsonpath='{.status.containerStatuses[0].containerID}' | cut -c 10-21)
+  pid=$(docker inspect --format '{{ .State.Pid }}' $id)
+
+  (nsenter -t ${pid} -n $*) 2>&1
 }
 
 swmfs() {
@@ -25,40 +37,44 @@ swmfs() {
   pod=$(kubectl get po -n $namespace --no-headers | grep Running | grep "1/1" | awk '!/client-deployment|nexus|bifrost|postgres|uaa|solr|ingress|rabbitmq|gdal/ { print $1 }' | head -n 1)
 
   echo '----------------------------------------------------------------------'
-  # this is a ping from the master not the node. 
-  # our alpine image does not include ping. better than nothing
   ip=$(echo $message | awk -F: '{ print $1 }')
-  echo Ping $ip
-  #ex $pod ping $ip -c 3
+
+  echo "Ping $ip (from $(hostname))"
   ping $ip -c 3
+  echo
 
   if [[ -z $pod ]]; then
     echo "No running pod found to check swmfs"
     return
   fi
 
+  echo "Ping $ip (from $pod)"
+  ex $pod $namespace ping $ip -c 3
+  echo
+
   swmfs_test=/Smallworld/core/bin/Linux.x86/swmfs_test
   swlm_clerk=/Smallworld/core/etc/Linux.x86/swlm_clerk
 
   echo '----------------------------------------------------------------------'
   echo Validate directory $message
-  ex $pod $swmfs_test 22 $message *.ds
+  ex2 $pod $swmfs_test 22 $message *.ds
   echo '----------------------------------------------------------------------'
   echo Validate server using message.ds in $message
-  ex $pod $swmfs_test 13 $message message.ds
+  ex2 $pod $swmfs_test 13 $message message.ds
   echo '----------------------------------------------------------------------'
   echo Validate licence
-  ex $pod bash -c "SW_LICENCE_DB=$message/message.ds $swlm_clerk -o"
+  #ex2 $pod bash -c "(SW_LICENCE_DB=$message/message.ds $swlm_clerk -o) 2>&1"
+  ex2 $pod bash -c "SW_LICENCE_DB=$message/message.ds $swlm_clerk -o 2>&1"
   echo '----------------------------------------------------------------------'
   echo Validate directory $ace
-  ex $pod $swmfs_test 22 $ace *.ds
+  ex2 $pod $swmfs_test 22 $ace *.ds
   echo '----------------------------------------------------------------------'
   echo Validate access to $ace
-  ex $pod $swmfs_test 1 $ace $$.ds
-  ex $pod $swmfs_test 4 $ace $$.ds
+  ex2 $pod $swmfs_test 1 $ace bundle-$$.ds
+  ex2 $pod $swmfs_test 4 $ace bundle-$$.ds
   echo '----------------------------------------------------------------------'
   echo Validate access to ace.ds in $ace
-  ex $pod $swmfs_test 23 $ace ace.ds 100
+  ex2 $pod $swmfs_test 23 $ace ace.ds 100
 }
 
 manifest() {
@@ -190,6 +206,10 @@ files() {
 	cat /etc/hosts
 	echo
 
+	sep2 resolv.conf ${FUNCNAME[0]}
+	cat /etc/resolv.conf
+	echo
+
 	sep2 exports ${FUNCNAME[0]}
 	if [[ -f /etc/exports ]]; then
 		cat /etc/exports
@@ -248,10 +268,27 @@ certificates() {
 	sep2 bifrost ${FUNCNAME[0]}
 
 	if [[ ! -z $(which curl) ]]; then
-		echo curl -v -k https://$(hostname):30443
-		no_proxy=$(hostname),$no_proxy curl -v -k https://$(hostname):30443/ 2>&1
+		echo curl -v --cacert $osds_root_dir/ssl/ca/ca.cert.pem https://$(hostname -f):30443
+		no_proxy=$(hostname -f),$no_proxy curl -v --cacert $osds_root_dir/ssl/ca/ca.cert.pem https://$(hostname -f):30443/ 2>&1
+		echo
+		echo curl -v -k https://$(hostname -f):30443
+		no_proxy=$(hostname -f),$no_proxy curl -v -k https://$(hostname -f):30443/ 2>&1
+		echo
 	else
 		echo "*** WARNING: curl not installed"
+	fi
+
+	if [[ ! -z $(which openssl) ]]; then
+		echo
+		echo openssl x509 -in $osds_root_dir/ssl/cert/ssl.cert.pem -text -noout 
+		openssl x509 -in $osds_root_dir/ssl/cert/ssl.cert.pem -text -noout 2>&1
+		echo
+		echo
+		echo openssl x509 -in $osds_root_dir/ssl/ca/ca.cert.pem -text -noout 2>&1
+		openssl x509 -in $osds_root_dir/ssl/ca/ca.cert.pem -text -noout 2>&1
+		echo
+	else
+		echo "*** WARNING: openssl not installed"
 	fi
 }
 
@@ -323,6 +360,22 @@ services() {
 	done
 }
 
+bifrost() {
+  sep ${FUNCNAME[0]}
+
+  pod=$(kubectl get po -n $namespace --no-headers | grep Running | grep "1/1" | awk '/bifrost/ { print $1 }' | head -n 1)
+
+  if [[ -z $pod ]]; then
+    echo "No running pod found to check bifrost"
+    return
+  fi
+
+  sep2 "/etc/hosts on $pod" ${FUNCNAME[0]}
+
+  ex $pod $namespace cat /etc/hosts
+  echo
+}
+
 gather() {
 	path=$1
 	shift
@@ -344,10 +397,11 @@ gather() {
 	services
 	logs
 	swmfs $*
+	bifrost
 }
 
 usage() {
-	echo -e "\nUsage: $0\n\t</path/to/pdc_input_manifest.yaml>\n\t-h|--help"
+	echo -e "\nUsage: $0\n\t</path/to/pdi_input_manifest.yaml>\n\t-h|--help"
 	exit 1
 }
 
@@ -406,7 +460,8 @@ root_hostdir_path=$(grep ROOT_HOSTPATH_DIR $path | cut -f2 -d"'" | cut -f1 -d"'"
 root_shared_path=$(grep ROOT_SHARED_DIR $path | cut -f2 -d"'" | cut -f1 -d"'")
 osds_root_dir=$(grep local_dir_mount_path $path | cut -f2 -d"'" | cut -f1 -d"'")
 
-ace_dir_path=${modelit_dir_path:-$ace_dir_path}
+#ace_dir_path=${modelit_dir_path:-$ace_dir_path}
+ace_dir_path=${ace_dir_path:-$modelit_dir_path}
 
 if [[ $storage_type == "nfs" ]]; then
 	root_path=$root_shared_path
