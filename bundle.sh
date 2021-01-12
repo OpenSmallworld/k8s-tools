@@ -450,18 +450,18 @@ do
       nobundle=false
       shift
       ;;
-        -n|--namespace)
-          namespace=$2
-          shift; shift
-          ;;
+    -n|--namespace)
+      namespace=$2
+      shift; shift
+      ;;
     -z|--no-bundle)
       nobundle=true
       shift
       ;;
-        -D|--debug)
-          set -x
-          shift
-          ;;
+    -D|--debug)
+      set -x
+      shift
+      ;;
     -h|--help)
       usage
       exit

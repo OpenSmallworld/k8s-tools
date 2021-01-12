@@ -7,8 +7,13 @@ Scripts to aid/diagnose GSS on Kubernetes installations.
 ### Initial installation
 
 ```bash
-git clone https://github.com/OpenSmallworld/k8s-tools.git
-git checkout <version> # v524, v523, v522, v521 etc
+git clone https://github.com/OpenSmallworld/k8s-tools.git 
+# or if you want a specific version
+git clone --branch <version> https://github.com/OpenSmallworld/k8s-tools.git # for example v526
+# list available branches/versions
+git branch -A 
+# checkout alternate version
+git checkout <version>
 ```
 
 ### Update installation
@@ -16,6 +21,10 @@ git checkout <version> # v524, v523, v522, v521 etc
 ```bash
 git pull
 ```
+
+You are recommended to use ```git pull``` frequently as there are regular updates, indicated by the VERSION ID.
+
+If you find that a ```git pull``` does not update, please delete and re-clone. The default branch may have changed.
 
 ## Scripts
 
@@ -25,16 +34,25 @@ Gather data into a support "bundle" for diagnosing issues.
 
 #### Usage
 
+In general, later versions of the script are backwards compatible with earlier versions, i.e. v526 can be used with GSS 5.2.2.
+The exception to this is v521/GSS 5.2.1.
+
 ```bash
-git pull # recommended to pull reqularly as there are frequent updates
+git pull # recommended
 sudo bash bundle.sh </path/to/pdc_input_manifest.yaml>
 ```
 
-If you have deployed to a namespace other than gss-prod, then use the ```--namespace <namespace>``` option.
+If you have deployed to a namespace other than gss-prod, then use the ```--namespace <namespace>``` or ```-n <namespace>``` option.
 
-To display all arguments, use the ```--help``` option.
+To avoid creating the bundled tar archive, use the ```--no-bundle``` or ```-z``` option.
+
+To display execution progress, use the ```--debug``` or ```-D``` option.
+
+To display all options, use the ```--help``` option.
 
 #### Example
+
+You should expect to see a simple ```...................``` as output. If you see a warning (shown below), these can be ignored. If you see errors, including those mentioning port numbers, then you have either run as the wrong user or there is a problem with your KUBECONFIG environment variable.
 
 ```bash
 [swadmin@k8s k8s-tools]$ sudo bash bundle.sh /opt/sw/gss-5.2.5/kubernetes_scripts/pdi_input_manifest.yaml 
