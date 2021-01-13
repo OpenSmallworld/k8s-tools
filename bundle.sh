@@ -1,4 +1,4 @@
-VER=21
+VER=22
 
 namespace='gss-prod' # default
 
@@ -374,7 +374,7 @@ describe() {
 		for type in deploy svc pods daemonsets pvc cronjobs jobs configmaps secrets ingress role rolebinding sa; do
 			kubectl get namespace --no-headers 2>/dev/null | awk '{ print $1 }' | while read ns; do
 					sep2 "$type -- $ns" ${FUNCNAME[0]}
-					kubectl describe $type -n $ns 2> /dev/null
+					kubectl describe $type -n $ns 2>/dev/null
 					echo
 			done
 		done
