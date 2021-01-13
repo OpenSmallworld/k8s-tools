@@ -358,14 +358,26 @@ logs() {
         done
 }
 
-services() {
+# services() {
+#         sep ${FUNCNAME[0]}
+#
+#         kubectl get namespace --no-headers 2>/dev/null | awk '{ print $1 }' | while read ns; do
+#                 sep2 $ns ${FUNCNAME[0]}
+#                 kubectl describe service -n $ns 2>&1
+#                 echo
+#         done
+# }
+
+describe() {
         sep ${FUNCNAME[0]}
 
-        kubectl get namespace --no-headers 2>/dev/null | awk '{ print $1 }' | while read ns; do
-                sep2 $ns ${FUNCNAME[0]}
-                kubectl describe service -n $ns 2>&1
-                echo
-        done
+		for type in deploy,svc,pods,daemonsets,pvc,cronjobs,jobs,configmaps,secrets,ingress,role,rolebinding,sa; do
+			kubectl get namespace --no-headers 2>/dev/null | awk '{ print $1 }' | while read ns; do
+					sep2 "$type -- $ns" ${FUNCNAME[0]}
+					kubectl describe $type -n $ns 2>&1
+					echo
+			done
+		done
 }
 
 bifrost() {
@@ -402,7 +414,7 @@ gather() {
         endpoints
         certificates
         nexus
-        services
+		describe
         logs
         swmfs $*
         bifrost
