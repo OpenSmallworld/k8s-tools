@@ -371,7 +371,7 @@ logs() {
 describe() {
         sep ${FUNCNAME[0]}
 
-		for type in deploy,svc,pods,daemonsets,pvc,cronjobs,jobs,configmaps,secrets,ingress,role,rolebinding,sa; do
+		for type in deploy svc pods daemonsets pvc cronjobs jobs configmaps secrets ingress role rolebinding sa; do
 			kubectl get namespace --no-headers 2>/dev/null | awk '{ print $1 }' | while read ns; do
 					sep2 "$type -- $ns" ${FUNCNAME[0]}
 					kubectl describe $type -n $ns 2>&1
