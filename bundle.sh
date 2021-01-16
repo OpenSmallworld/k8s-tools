@@ -1,4 +1,4 @@
-VER=23
+VER=24
 
 namespace='gss-prod' # default
 
@@ -297,13 +297,19 @@ certificates() {
                 echo
 
                 if [[ ! -z $(which update-ca-trust) ]]; then
-                        # update-ca-trust force-enable
+                        yum -y install ca-certificates
+                        update-ca-trust force-enable
                         cp $osds_root_dir/ssl/ca/ca.cert.pem /etc/pki/ca-trust/source/anchors/
                         update-ca-trust extract
                         openssl verify -verbose -purpose sslserver -CApath $osds_root_dir/ssl/ca $osds_root_dir/ssl/cert/ssl.cert.pem
                         echo
-                else
-                        echo "*** WARNING: not a Red Hat based distribution"
+                fi
+
+                if [[ ! -z $(which update-ca-certificates) ]]; then
+                        cp $osds_root_dir/ssl/ca/ca.cert.pem /usr/local/share/ca-certificates/
+                        update-ca-certificates
+                        openssl verify -verbose -purpose sslserver -CApath $osds_root_dir/ssl/ca $osds_root_dir/ssl/cert/ssl.cert.pem
+                        echo
                 fi
         else
                 echo "*** WARNING: openssl not installed"
