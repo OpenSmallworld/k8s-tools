@@ -1,4 +1,4 @@
-VER=24
+VER=25
 
 namespace='gss-prod' # default
 
@@ -458,6 +458,10 @@ deploy_logs() {
 if [[ $(id -u) -ne 0 ]]; then
         echo "*** Error: Running as user $USER not as root/sudo user"
         exit 1
+fi
+
+if [[ -z $KUBECONFIG ]]; then
+        export KUBECONFIG=/etc/kubernetes/admin.conf
 fi
 
 path=$1
