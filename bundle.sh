@@ -461,16 +461,6 @@ if [[ $(id -u) -ne 0 ]]; then
         exit 1
 fi
 
-if [[ -z $KUBECONFIG ]]; then
-#        export KUBECONFIG=/etc/kubernetes/admin.conf
-        if [[ ! -z $kubeconfig ]]; then
-                export KUBECONFIG=$kubeconfig
-        else
-                echo "*** Error: KUBECONFIG nor -k/--kubeconfig set"
-                exit 1
-        fi
-fi
-
 path=$1
 nobundle=false
 
@@ -515,6 +505,16 @@ do
       exit
   esac
 done
+
+if [[ -z $KUBECONFIG ]]; then
+#        export KUBECONFIG=/etc/kubernetes/admin.conf
+        if [[ ! -z $kubeconfig ]]; then
+                export KUBECONFIG=$kubeconfig
+        else
+                echo "*** Error: KUBECONFIG nor -k/--kubeconfig set"
+                exit 1
+        fi
+fi
 
 message_dir_path=$(grep MESSAGES_DIR_PATH $path | cut -f2 -d"'" | cut -f1 -d"'")
 ace_dir_path=$(grep ACE_DIR_PATH $path | cut -f2 -d"'" | cut -f1 -d"'")
