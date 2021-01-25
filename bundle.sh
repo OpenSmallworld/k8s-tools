@@ -1,6 +1,7 @@
-VER=25
+VER=26
 
 namespace='gss-prod' # default
+kubeconfig=''
 
 ex3() {
 
@@ -461,7 +462,13 @@ if [[ $(id -u) -ne 0 ]]; then
 fi
 
 if [[ -z $KUBECONFIG ]]; then
-        export KUBECONFIG=/etc/kubernetes/admin.conf
+#        export KUBECONFIG=/etc/kubernetes/admin.conf
+        if [[ ! -z $kubeconfig ]]; then
+                export KUBECONFIG=$kubeconfig
+        else
+                echo "*** Error: KUBECONFIG nor -k/--kubeconfig set"
+                exit 1
+        fi
 fi
 
 path=$1
@@ -484,6 +491,10 @@ do
       ;;
     -n|--namespace)
       namespace=$2
+      shift; shift
+      ;;
+    -k|--kubeconfig)
+      kubeconfig=$2
       shift; shift
       ;;
     -z|--no-bundle)
