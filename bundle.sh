@@ -1,7 +1,8 @@
-VER=26
+VER=27
 
 namespace='gss-prod' # default
 kubeconfig=''
+osds_root_dir=''
 
 ex3() {
 
@@ -146,10 +147,10 @@ basic() {
         echo 
         uname -a
         echo
-        if [[ $(which hostnamectl | wc -l ) -gt 0 ]]; then
+        if [[ ! -z $(which hostnamectl 2> /dev/null) ]]; then
                 hostnamectl
         else
-                echo "hostnamectl not present"
+                echo "*** WARNING: hostnamectl not present"
         fi
         echo
         uptime
@@ -199,10 +200,10 @@ disks() {
 
 process() {
         sep ${FUNCNAME[0]}
-        if [[ $(which systemctl | wc -l ) -gt 0 ]]; then
+        if [[ ! -z $(which systemctl 2> /dev/null) ]]; then
                 systemctl status
         else
-                echo "systemctl not present"
+                echo "*** WARNING: systemctl not present"
         fi
         echo
         ps -efl
@@ -276,41 +277,52 @@ certificates() {
         sep ${FUNCNAME[0]}
         sep2 bifrost ${FUNCNAME[0]}
 
-        if [[ ! -z $(which curl) ]]; then
-                echo curl -v --cacert $osds_root_dir/ssl/ca/ca.cert.pem https://$(hostname -f):30443
-                no_proxy=$(hostname -f),$no_proxy curl -v --cacert $osds_root_dir/ssl/ca/ca.cert.pem https://$(hostname -f):30443/ 2>&1
-                echo
-                echo curl -v -k https://$(hostname -f):30443
-                no_proxy=$(hostname -f),$no_proxy curl -v -k https://$(hostname -f):30443/ 2>&1
-                echo
+        if [[ ! -z $(which curl 2> /dev/null) ]]; then
+                if [[ -f $osds_root_dir/ssl/ca/ca.cert.pem ]]; then
+                        echo curl -v --cacert $osds_root_dir/ssl/ca/ca.cert.pem https://$(hostname -f):30443
+                        no_proxy=$(hostname -f),$no_proxy curl -v --cacert $osds_root_dir/ssl/ca/ca.cert.pem https://$(hostname -f):30443/ 2>&1
+                        echo
+                        echo curl -v -k https://$(hostname -f):30443
+                        no_proxy=$(hostname -f),$no_proxy curl -v -k https://$(hostname -f):30443/ 2>&1
+                        echo
+                fi
         else
                 echo "*** WARNING: curl not installed"
         fi
 
-        if [[ ! -z $(which openssl) ]]; then
-                echo
-                echo openssl x509 -in $osds_root_dir/ssl/cert/ssl.cert.pem -text -noout 
-                openssl x509 -in $osds_root_dir/ssl/cert/ssl.cert.pem -text -noout 2>&1
-                echo
-                echo
-                echo openssl x509 -in $osds_root_dir/ssl/ca/ca.cert.pem -text -noout 2>&1
-                openssl x509 -in $osds_root_dir/ssl/ca/ca.cert.pem -text -noout 2>&1
-                echo
-
-                if [[ ! -z $(which update-ca-trust) ]]; then
-                        yum -y install ca-certificates
-                        update-ca-trust force-enable
-                        cp $osds_root_dir/ssl/ca/ca.cert.pem /etc/pki/ca-trust/source/anchors/
-                        update-ca-trust extract
-                        openssl verify -verbose -purpose sslserver -CApath $osds_root_dir/ssl/ca $osds_root_dir/ssl/cert/ssl.cert.pem
+        if [[ ! -z $(which openssl 2> /dev/null) ]]; then
+                if [[ -f $osds_root_dir/ssl/cert/ssl.cert.pem ]]; then
+                        echo
+                        echo openssl x509 -in $osds_root_dir/ssl/cert/ssl.cert.pem -text -noout 
+                        openssl x509 -in $osds_root_dir/ssl/cert/ssl.cert.pem -text -noout 2>&1
                         echo
                 fi
 
-                if [[ ! -z $(which update-ca-certificates) ]]; then
-                        cp $osds_root_dir/ssl/ca/ca.cert.pem /usr/local/share/ca-certificates/
-                        update-ca-certificates
-                        openssl verify -verbose -purpose sslserver -CApath $osds_root_dir/ssl/ca $osds_root_dir/ssl/cert/ssl.cert.pem
+                if [[ -f  $osds_root_dir/ssl/ca/ca.cert.pem ]]; then
                         echo
+                        echo openssl x509 -in $osds_root_dir/ssl/ca/ca.cert.pem -text -noout 2>&1
+                        openssl x509 -in $osds_root_dir/ssl/ca/ca.cert.pem -text -noout 2>&1
+                        echo
+                fi
+
+                if [[ ! -z $(which update-ca-trust 2> /dev/null) ]]; then
+                        if [[ -f $osds_root_dir/ssl/ca/ca.cert.pem ]]; then
+                                yum -y install ca-certificates
+                                update-ca-trust force-enable
+                                cp $osds_root_dir/ssl/ca/ca.cert.pem /etc/pki/ca-trust/source/anchors/
+                                update-ca-trust extract
+                                openssl verify -verbose -purpose sslserver -CApath $osds_root_dir/ssl/ca $osds_root_dir/ssl/cert/ssl.cert.pem
+                                echo
+                        fi
+                fi
+
+                if [[ ! -z $(which update-ca-certificates 2> /dev/null) ]]; then
+                        if [[ -f $osds_root_dir/ssl/ca/ca.cert.pem ]]; then
+                                cp $osds_root_dir/ssl/ca/ca.cert.pem /usr/local/share/ca-certificates/
+                                update-ca-certificates
+                                openssl verify -verbose -purpose sslserver -CApath $osds_root_dir/ssl/ca $osds_root_dir/ssl/cert/ssl.cert.pem
+                                echo
+                        fi
                 fi
         else
                 echo "*** WARNING: openssl not installed"
@@ -487,6 +499,10 @@ do
       kubeconfig=$2
       shift; shift
       ;;
+    -O|--osds_root_dir)
+      osds_root_dir=$2
+      shift; shift
+      ;;
     -z|--no-bundle)
       nobundle=true
       shift
@@ -522,7 +538,8 @@ modelit_dir_path=$(grep MODELIT_DIR_PATH $path | cut -f2 -d"'" | cut -f1 -d"'")
 storage_type=$(grep STORAGE_TYPE $path | cut -f2 -d"'" | cut -f1 -d"'")
 root_hostdir_path=$(grep ROOT_HOSTPATH_DIR $path | cut -f2 -d"'" | cut -f1 -d"'")
 root_shared_path=$(grep ROOT_SHARED_DIR $path | cut -f2 -d"'" | cut -f1 -d"'")
-osds_root_dir=$(grep local_dir_mount_path $path | cut -f2 -d"'" | cut -f1 -d"'")
+local_dir_mount_path=$(grep local_dir_mount_path $path | cut -f2 -d"'" | cut -f1 -d"'")
+osds_root_dir=${osds_root_dir:-$local_dir_mount_path}
 
 #ace_dir_path=${modelit_dir_path:-$ace_dir_path}
 ace_dir_path=${ace_dir_path:-$modelit_dir_path}
@@ -579,7 +596,7 @@ if ! $nobundle; then
 
         deploy_logs $(pwd)/$file $args
 
-        if [[ $(which gzip | wc -l) -gt 0 ]]; then
+        if [[ ! -z $(which gzip 2> /dev/null) ]]; then
                 gzip $file
                 file+=".gz"
         fi
