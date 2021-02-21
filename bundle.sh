@@ -1,8 +1,10 @@
-VER=27
+VER=28
 
 namespace='gss-prod' # default
 kubeconfig=''
 osds_root_dir=''
+use_modelit=false
+include_previous=false
 
 ex3() {
 
@@ -373,15 +375,21 @@ logs() {
                 echo
         done
 
+        if $include_previous; then
+                string='(Completed)'
+        else
+                string='(Running|Completed)'
+        fi
+
         # get the previous log of any non-running pods in nexus namespace
-        kubectl get pods -n nexus --no-headers 2>/dev/null | grep -vE '(Running|Completed)' | awk '{ print $1 }' | while read pod; do 
+        kubectl get pods -n nexus --no-headers 2>/dev/null | grep -vE $string | awk '{ print $1 }' | while read pod; do 
                 sep2 $pod "${FUNCNAME[0]} -- previous"
                 kubectl logs -n nexus $pod --previous 2>&1
                 echo
         done
 
         # get the previous log of any non-running pods in gss-prod namespace
-        kubectl get pods -n $namespace --no-headers 2>/dev/null | grep -vE '(Running|Completed)' | awk '{ print $1 }' | while read pod; do 
+        kubectl get pods -n $namespace --no-headers 2>/dev/null | grep -vE $string | awk '{ print $1 }' | while read pod; do 
                 sep2 $pod "${FUNCNAME[0]} -- previous"
                 kubectl logs -n $namespace $pod --previous 2>&1
         done
@@ -503,6 +511,14 @@ do
       osds_root_dir=$2
       shift; shift
       ;;
+    -M|--use_modelit_dir_path)
+      use_modelit=true
+      shift
+      ;;
+    -P|--include-previous)
+      include_previous=true
+      shift
+      ;;
     -z|--no-bundle)
       nobundle=true
       shift
@@ -541,8 +557,11 @@ root_shared_path=$(grep ROOT_SHARED_DIR $path | cut -f2 -d"'" | cut -f1 -d"'")
 local_dir_mount_path=$(grep local_dir_mount_path $path | cut -f2 -d"'" | cut -f1 -d"'")
 osds_root_dir=${osds_root_dir:-$local_dir_mount_path}
 
-#ace_dir_path=${modelit_dir_path:-$ace_dir_path}
-ace_dir_path=${ace_dir_path:-$modelit_dir_path}
+if $use_modelit; then
+        ace_dir_path="${modelit_dir_path}/ds_admin"
+else
+        ace_dir_path=${ace_dir_path:-$modelit_dir_path}
+fi
 
 if [[ $storage_type == "nfs" ]]; then
         root_path=$root_shared_path
