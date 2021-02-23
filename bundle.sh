@@ -3,6 +3,7 @@ VER=28
 namespace='gss-prod' # default
 kubeconfig=''
 osds_root_dir=''
+nobundle=false
 use_modelit=false
 include_previous=false
 
@@ -395,16 +396,6 @@ logs() {
         done
 }
 
-# services() {
-#         sep ${FUNCNAME[0]}
-#
-#         kubectl get namespace --no-headers 2>/dev/null | awk '{ print $1 }' | while read ns; do
-#                 sep2 $ns ${FUNCNAME[0]}
-#                 kubectl describe service -n $ns 2>&1
-#                 echo
-#         done
-# }
-
 describe() {
         sep ${FUNCNAME[0]}
 
@@ -482,7 +473,6 @@ if [[ $(id -u) -ne 0 ]]; then
 fi
 
 path=$1
-nobundle=false
 
 if [[ -z $path || ! -f $path ]]; then
         usage
@@ -495,10 +485,6 @@ do
   key="$1"
 
   case $key in
-    -A|--all)
-      nobundle=false
-      shift
-      ;;
     -n|--namespace)
       namespace=$2
       shift; shift
@@ -507,15 +493,15 @@ do
       kubeconfig=$2
       shift; shift
       ;;
-    -O|--osds_root_dir)
+    -o|--osds_root_dir)
       osds_root_dir=$2
       shift; shift
       ;;
-    -M|--use_modelit_dir_path)
+    -m|--use_modelit_dir_path)
       use_modelit=true
       shift
       ;;
-    -P|--include-previous)
+    -p|--include-previous)
       include_previous=true
       shift
       ;;
@@ -523,7 +509,7 @@ do
       nobundle=true
       shift
       ;;
-    -D|--debug)
+    -d|--debug)
       set -x
       shift
       ;;
