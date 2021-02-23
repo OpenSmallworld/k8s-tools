@@ -449,7 +449,27 @@ gather() {
 }
 
 usage() {
-        echo -e "\nUsage: $0\n\t</path/to/pdi_input_manifest.yaml>\n\t-h|--help"
+        cat << EOD
+Usage: $0 </path/to/pdi_input_manifest.yaml>
+
+        -n|--namespace <namespace>
+                Use alternate namespace <namespace>
+        -k|--kubeconfig </path/to/kubeconfig>
+                Use alternate config file to that specified in KUBECONFIG, or where not defined
+        -o|--osds_root_dir </path/to/osds_root_dir>
+                Override osds_root_dir. Commonly used for older manifests where this was not defined.
+        -m|--use_modelit_dir_path
+                Use MODELIT_DIR_PATH from manifest rather than ACE_DIR_PATH
+        -p|--include-previous
+                Include any previous log files, even for running pods
+        -z|--no-bundle
+                Do not create the support bundle, only info.txt
+        -d|--debug
+                Debug running script by echoing commands
+        -h|--help
+                This help
+
+EOD
         exit 1
 }
 
