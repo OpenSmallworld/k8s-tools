@@ -478,12 +478,16 @@ deploy_logs() {
         tar_file=$1
         args=$2
 
-        docker volume ls | awk '/volume_stp_sw_gss_deploy/ { print $2 }' | while read volume; do
-                        mp=$(docker volume inspect $volume | jq -r '.[].Mountpoint')
-                        pushd $mp > /dev/null
-                        tar -${args}rf $tar_file *.log
-                        popd > /dev/null
-        done
+        if [[ ! -z $(which jq 2> /dev/null) ]]; then
+                docker volume ls | awk '/volume_stp_sw_gss_deploy/ { print $2 }' | while read volume; do
+                                mp=$(docker volume inspect $volume | jq -r '.[].Mountpoint')
+                                pushd $mp > /dev/null
+                                tar -${args}rf $tar_file *.log
+                                popd > /dev/null
+                done
+        else
+                echo "*** WARNING: jq not present. deploy_logs would add more information if installed"
+        fi
 }
 
 # avoid permissions errors
