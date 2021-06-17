@@ -1,4 +1,4 @@
-VER=28
+VER=29
 
 namespace='gss-prod' # default
 kubeconfig=''
@@ -382,17 +382,13 @@ logs() {
                 string='(Running|Completed)'
         fi
 
-        # get the previous log of any non-running pods in nexus namespace
-        kubectl get pods -n nexus --no-headers 2>/dev/null | grep -vE $string | awk '{ print $1 }' | while read pod; do 
+        # get the previous log of any non-running pods
+        kubectl get pods -A --no-headers 2>/dev/null | grep -vE $string | awk '{ print $1 ":" $2 }' | while read info; do 
                 sep2 $pod "${FUNCNAME[0]} -- previous"
-                kubectl logs -n nexus $pod --previous 2>&1
+                ns=`echo $info | cut -d : -f 1`
+                pod=`echo $info | cut -d : -f 2`
+                kubectl logs -n $ns $pod --previous 2>&1
                 echo
-        done
-
-        # get the previous log of any non-running pods in gss-prod namespace
-        kubectl get pods -n $namespace --no-headers 2>/dev/null | grep -vE $string | awk '{ print $1 }' | while read pod; do 
-                sep2 $pod "${FUNCNAME[0]} -- previous"
-                kubectl logs -n $namespace $pod --previous 2>&1
         done
 }
 
@@ -478,16 +474,12 @@ deploy_logs() {
         tar_file=$1
         args=$2
 
-        if [[ ! -z $(which jq 2> /dev/null) ]]; then
-                docker volume ls | awk '/volume_stp_sw_gss_deploy/ { print $2 }' | while read volume; do
-                                mp=$(docker volume inspect $volume | jq -r '.[].Mountpoint')
-                                pushd $mp > /dev/null
-                                tar -${args}rf $tar_file *.log
-                                popd > /dev/null
-                done
-        else
-                echo "*** WARNING: jq not present. deploy_logs would add more information if installed"
-        fi
+        docker volume ls | awk '/volume_stp_sw_gss_deploy/ { print $2 }' | while read volume; do
+                        mp=$(docker volume inspect $volume | jq -r '.[].Mountpoint')
+                        pushd $mp > /dev/null
+                        tar -${args}rf $tar_file *.log
+                        popd > /dev/null
+        done
 }
 
 # avoid permissions errors
