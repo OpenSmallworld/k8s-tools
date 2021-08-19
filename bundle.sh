@@ -1,4 +1,4 @@
-VER=29
+VER=30
 
 namespace='gss-prod' # default
 kubeconfig=''
@@ -6,6 +6,8 @@ osds_root_dir=''
 nobundle=false
 use_modelit=false
 include_previous=false
+isroot=false
+nonroot=false
 
 ex3() {
 
@@ -436,9 +438,9 @@ gather() {
         nodes
         pods
         endpoints
-        certificates
+	if $isroot; then certificates; fi
         nexus
-		describe
+	describe
         logs
         swmfs $*
         bifrost
@@ -453,7 +455,7 @@ Usage: $0 </path/to/pdi_input_manifest.yaml>
         -k|--kubeconfig </path/to/kubeconfig>
                 Use alternate config file to that specified in KUBECONFIG, or where not defined
         -o|--osds_root_dir </path/to/osds_root_dir>
-                Override osds_root_dir. Commonly used for older manifests where this was not defined.
+                Override osds_root_dir. Commonly used for older manifests where this was not defined
         -m|--use_modelit_dir_path
                 Use MODELIT_DIR_PATH from manifest rather than ACE_DIR_PATH
         -p|--include-previous
@@ -462,6 +464,8 @@ Usage: $0 </path/to/pdi_input_manifest.yaml>
                 Do not create the support bundle, only info.txt
         -d|--debug
                 Debug running script by echoing commands
+	-N|--non-root
+		Run as a non-root user. This may cause some information to not be captured as well as errors while running!
         -h|--help
                 This help
 
@@ -482,11 +486,6 @@ deploy_logs() {
         done
 }
 
-# avoid permissions errors
-if [[ $(id -u) -ne 0 ]]; then
-        echo "*** Error: Running as user $USER not as root/sudo user"
-        exit 1
-fi
 
 path=$1
 
@@ -529,6 +528,10 @@ do
       set -x
       shift
       ;;
+    -N|--non-root)
+      nonroot=true
+      shift
+      ;;
     -h|--help)
       usage
       exit
@@ -540,8 +543,20 @@ do
   esac
 done
 
+# avoid permissions errors
+if ! $nonroot; then
+	if [[ $(id -u) -ne 0 ]]; then
+       		echo "*** Error: Running as user $USER not as root/sudo user"
+       		exit 1
+	fi
+	isroot=true
+fi
+
+#if [[ $(id -u) -eq 0 ]]; then
+#	isroot=true
+#fi
+
 if [[ -z $KUBECONFIG ]]; then
-#        export KUBECONFIG=/etc/kubernetes/admin.conf
         if [[ ! -z $kubeconfig ]]; then
                 export KUBECONFIG=$kubeconfig
         else
