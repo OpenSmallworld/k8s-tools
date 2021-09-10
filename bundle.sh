@@ -1,4 +1,4 @@
-VER=30
+VER=31
 
 namespace='gss-prod' # default
 kubeconfig=''
@@ -364,6 +364,13 @@ logs() {
                 echo
         done
 
+        # logging
+        kubectl get pods -n logging --no-headers 2>/dev/null | awk '{ print $1 }' | while read pod; do
+                sep2 $pod ${FUNCNAME[0]}
+                kubectl logs -n logging $pod 2>&1
+                echo
+        done
+
         # nexus
         kubectl get pods -n nexus --no-headers 2>/dev/null | awk '{ print $1 }' | while read pod; do
                 sep2 $pod ${FUNCNAME[0]}
@@ -371,7 +378,7 @@ logs() {
                 echo
         done
 
-        # gss-prod
+        # given namespace
         kubectl get pods -n $namespace --no-headers 2>/dev/null | awk '{ print $1 }' | while read pod; do
                 sep2 $pod ${FUNCNAME[0]}
                 kubectl logs -n $namespace $pod 2>&1
