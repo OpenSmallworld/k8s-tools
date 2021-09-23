@@ -1,4 +1,4 @@
-VER=31
+VER=32
 
 namespace='gss-prod' # default
 kubeconfig=''
@@ -8,6 +8,7 @@ use_modelit=false
 include_previous=false
 isroot=false
 nonroot=false
+log_args=''
 
 ex3() {
 
@@ -299,7 +300,7 @@ certificates() {
                 if [[ -f $osds_root_dir/ssl/cert/ssl.cert.pem ]]; then
                         echo
                         echo openssl x509 -in $osds_root_dir/ssl/cert/ssl.cert.pem -text -noout 
-                        openssl x509 -in $osds_root_dir/ssl/cert/ssl.cert.pem -text -noout 2>&1
+                        openssl x509 -in $osds_root_dir/ssl/cert/ssl.cert.pem -text -noout 2>&1                       
                         echo
                 fi
 
@@ -325,7 +326,7 @@ certificates() {
                         if [[ -f $osds_root_dir/ssl/ca/ca.cert.pem ]]; then
                                 cp $osds_root_dir/ssl/ca/ca.cert.pem /usr/local/share/ca-certificates/
                                 update-ca-certificates
-                                openssl verify -verbose -purpose sslserver -CApath $osds_root_dir/ssl/ca $osds_root_dir/ssl/cert/ssl.cert.pem
+                                openssl verify -verbose -purpose sslserver -CApath $osds_root_dir/ssl/ca $osds_root_dir/ssl/cert/ssl.cert.pem                                
                                 echo
                         fi
                 fi
@@ -346,42 +347,42 @@ logs() {
         # kube-dns 
         for pod in $(kubectl get pods -o name -n kube-system -l k8s-app=kube-dns); do 
                 sep2 $pod ${FUNCNAME[0]}
-                kubectl logs -n kube-system $pod
+                kubectl logs -n kube-system $pod $log_args
                 echo
         done
 
         #flannel
         for pod in $(kubectl get pods -o name -n kube-system -l app=flannel); do 
                 sep2 $pod ${FUNCNAME[0]}
-                kubectl logs -n kube-system $pod
+                kubectl logs -n kube-system $pod $log_args
                 echo
         done
 
         #kube-proxy
         for pod in $(kubectl get pods -o name -n kube-system -l k8s-app=kube-proxy); do 
                 sep2 $pod ${FUNCNAME[0]}
-                kubectl logs -n kube-system $pod
+                kubectl logs -n kube-system $pod $log_args
                 echo
         done
 
         # logging
         kubectl get pods -n logging --no-headers 2>/dev/null | awk '{ print $1 }' | while read pod; do
                 sep2 $pod ${FUNCNAME[0]}
-                kubectl logs -n logging $pod 2>&1
+                kubectl logs -n logging $pod $log_args
                 echo
         done
 
         # nexus
         kubectl get pods -n nexus --no-headers 2>/dev/null | awk '{ print $1 }' | while read pod; do
                 sep2 $pod ${FUNCNAME[0]}
-                kubectl logs -n nexus $pod 2>&1
+                kubectl logs -n nexus $pod $log_args
                 echo
         done
 
         # given namespace
         kubectl get pods -n $namespace --no-headers 2>/dev/null | awk '{ print $1 }' | while read pod; do
                 sep2 $pod ${FUNCNAME[0]}
-                kubectl logs -n $namespace $pod 2>&1
+                kubectl logs -n $namespace $pod $log_args
                 echo
         done
 
@@ -404,13 +405,13 @@ logs() {
 describe() {
         sep ${FUNCNAME[0]}
 
-		for type in deploy svc pods daemonsets pvc cronjobs jobs configmaps secrets ingress role rolebinding sa; do
-			kubectl get namespace --no-headers 2>/dev/null | awk '{ print $1 }' | while read ns; do
-					sep2 "$type -- $ns" ${FUNCNAME[0]}
-					kubectl describe $type -n $ns 2>/dev/null
-					echo
-			done
-		done
+                for type in deploy svc pods daemonsets pvc cronjobs jobs configmaps secrets ingress role rolebinding sa; do
+                        kubectl get namespace --no-headers 2>/dev/null | awk '{ print $1 }' | while read ns; do
+                                        sep2 "$type -- $ns" ${FUNCNAME[0]}
+                                        kubectl describe $type -n $ns 2>/dev/null
+                                        echo
+                        done
+                done
 }
 
 bifrost() {
@@ -445,9 +446,9 @@ gather() {
         nodes
         pods
         endpoints
-	if $isroot; then certificates; fi
+        if $isroot; then certificates; fi
         nexus
-	describe
+        describe
         logs
         swmfs $*
         bifrost
@@ -471,8 +472,8 @@ Usage: $0 </path/to/pdi_input_manifest.yaml>
                 Do not create the support bundle, only info.txt
         -d|--debug
                 Debug running script by echoing commands
-	-N|--non-root
-		Run as a non-root user. This may cause some information to not be captured as well as errors while running!
+        -N|--non-root
+                Run as a non-root user. This may cause some information to not be captured as well as errors while running!
         -h|--help
                 This help
 
@@ -543,6 +544,10 @@ do
       usage
       exit
       ;;
+    -s|--since)
+      log_args+="$1 $2"
+      shift; shift
+      ;;
     *)
       echo -e "Do no understand argument \"$key\"\n"
       usage
@@ -552,15 +557,15 @@ done
 
 # avoid permissions errors
 if ! $nonroot; then
-	if [[ $(id -u) -ne 0 ]]; then
-       		echo "*** Error: Running as user $USER not as root/sudo user"
-       		exit 1
-	fi
-	isroot=true
+        if [[ $(id -u) -ne 0 ]]; then
+                echo "*** Error: Running as user $USER not as root/sudo user"
+                exit 1
+        fi
+        isroot=true
 fi
 
 #if [[ $(id -u) -eq 0 ]]; then
-#	isroot=true
+#       isroot=true
 #fi
 
 if [[ -z $KUBECONFIG ]]; then
