@@ -1,4 +1,4 @@
-VER=32
+VER=33
 
 namespace='gss-prod' # default
 kubeconfig=''
@@ -208,6 +208,9 @@ process() {
         sep ${FUNCNAME[0]}
         if [[ ! -z $(which systemctl 2> /dev/null) ]]; then
                 systemctl status
+                systemctl --no-pager --full status nfs
+                systemctl --no-pager --full status docker
+                systemctl --no-pager --full status kubelet
         else
                 echo "*** WARNING: systemctl not present"
         fi
