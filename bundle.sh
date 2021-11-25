@@ -1,4 +1,4 @@
-VER=33
+VER=34
 
 namespace='gss-prod' # default
 kubeconfig=''
@@ -497,6 +497,13 @@ deploy_logs() {
         done
 }
 
+pod_logs() {
+
+        tar_file=$1
+        args=$2
+
+        tar -${args}rf $tar_file /var/log/pods
+}
 
 path=$1
 
@@ -646,6 +653,7 @@ if ! $nobundle; then
         tar -${args}cf $file $files
 
         deploy_logs $(pwd)/$file $args
+        pod_logs $(pwd)/$file $args
 
         if [[ ! -z $(which gzip 2> /dev/null) ]]; then
                 gzip $file
