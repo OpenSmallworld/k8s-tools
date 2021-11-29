@@ -400,7 +400,7 @@ logs() {
                 sep2 $pod "${FUNCNAME[0]} -- previous"
                 ns=`echo $info | cut -d : -f 1`
                 pod=`echo $info | cut -d : -f 2`
-                kubectl logs -n $ns $pod --previous 2>&1
+                kubectl logs -n $namespace $pod --previous 2>&1
                 echo
         done
 }
@@ -410,8 +410,8 @@ describe() {
 
                 for type in deploy svc pods daemonsets pvc cronjobs jobs configmaps secrets ingress role rolebinding sa; do
                         kubectl get namespace --no-headers 2>/dev/null | awk '{ print $1 }' | while read ns; do
-                                        sep2 "$type -- $ns" ${FUNCNAME[0]}
-                                        kubectl describe $type -n $ns 2>/dev/null
+                                        sep2 "$type -- $namespace" ${FUNCNAME[0]}
+                                        kubectl describe $type -n $namespace 2>/dev/null
                                         echo
                         done
                 done
