@@ -394,14 +394,6 @@ logs() {
                 fi                
         done
 
-        if $include_previous; then
-                kubectl get pods -n $namespace --no-headers 2>/dev/null | awk '{ print $1 }' | while read pod; do
-                        sep2 $pod "${FUNCNAME[0]} -- previous"
-                        kubectl logs -n $namespace $pod $log_args --previous 2>&1
-                        echo
-                done
-        fi
-
         #if $include_previous; then
         #        string='(Completed)'
         #else
