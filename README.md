@@ -48,6 +48,12 @@ To avoid creating the bundled tar archive, use the ```--no-bundle``` or ```-z```
 
 To display execution progress, use the ```--debug``` or ```-D``` option.
 
+For AWS or restricted shells where root access is not permitted, use the ```--non-root``` or ```-N``` option. This may cause some information to not be captured as well as errors while running!
+
+If ```KUBECONFIG``` is not defined, you can point to an alternative file using the ```--kubeconfig </path/to/kubeconfig>``` or ```-k </path/to/kubeconfig>``` option.
+
+If a pod has restarted and you want to include the logs fronm the previous instance, use the ```--include-previous``` or ```--p``` option.
+
 To display all options, use the ```--help``` option.
 
 #### Example
