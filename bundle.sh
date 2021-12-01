@@ -1,4 +1,4 @@
-VER=34
+VER=35
 
 namespace='gss-prod' # default
 kubeconfig=''
@@ -387,22 +387,36 @@ logs() {
                 sep2 $pod ${FUNCNAME[0]}
                 kubectl logs -n $namespace $pod $log_args
                 echo
+                if $include_previous; then
+                        sep2 $pod "${FUNCNAME[0]} -- previous"
+                        kubectl logs -n $namespace $pod $log_args --previous 2>&1
+                        echo
+                fi                
         done
 
         if $include_previous; then
-                string='(Completed)'
-        else
-                string='(Running|Completed)'
+                kubectl get pods -n $namespace --no-headers 2>/dev/null | awk '{ print $1 }' | while read pod; do
+                        sep2 $pod "${FUNCNAME[0]} -- previous"
+                        kubectl logs -n $namespace $pod $log_args --previous 2>&1
+                        echo
+                done
         fi
 
+        #if $include_previous; then
+        #        string='(Completed)'
+        #else
+        #        string='(Running|Completed)'
+        #fi
+        
         # get the previous log of any non-running pods
-        kubectl get pods -A --no-headers 2>/dev/null | grep -vE $string | awk '{ print $1 ":" $2 }' | while read info; do 
-                sep2 $pod "${FUNCNAME[0]} -- previous"
-                ns=`echo $info | cut -d : -f 1`
-                pod=`echo $info | cut -d : -f 2`
-                kubectl logs -n $namespace $pod --previous 2>&1
-                echo
-        done
+        #kubectl get pods -A --no-headers 2>/dev/null | grep -vE $string | awk '{ print $1 ":" $2 }' | while read info; do 
+        # kubectl get pods -A --no-headers 2>/dev/null | awk '{ print $1 ":" $2 }' | while read info; do 
+        #         sep2 $info "${FUNCNAME[0]} -- previous"
+        #         ns=`echo $info | cut -d : -f 1`
+        #         pod=`echo $info | cut -d : -f 2`
+        #         kubectl logs -n $ns $pod --previous 2>&1
+        #         echo
+        # done
 }
 
 describe() {
@@ -452,7 +466,7 @@ gather() {
         if $isroot; then certificates; fi
         nexus
         describe
-        logs
+        #logs
         swmfs $*
         bifrost
 }
@@ -489,12 +503,17 @@ deploy_logs() {
         tar_file=$1
         args=$2
 
-        docker volume ls | awk '/volume_stp_sw_gss_deploy/ { print $2 }' | while read volume; do
-                        mp=$(docker volume inspect $volume | jq -r '.[].Mountpoint')
-                        pushd $mp > /dev/null
-                        tar -${args}rf $tar_file *.log
-                        popd > /dev/null
-        done
+        if [[ ! -z $(which jq 2> /dev/null) ]]; then
+                docker volume ls | awk '/volume_stp_sw_gss_deploy/ { print $2 }' | while read volume; do
+                                mp=$(docker volume inspect $volume | jq -r '.[].Mountpoint')
+                                pushd $mp > /dev/null
+                                tar -${args}rf $tar_file *.log
+                                popd > /dev/null
+                done
+        else
+                echo "*** WARNING: jq is missing. Cannot find deploy logs mountpoint."
+                touch jq_missing
+        fi
 }
 
 pod_logs() {
@@ -502,7 +521,13 @@ pod_logs() {
         tar_file=$1
         args=$2
 
-        tar -${args}rf $tar_file /var/log/pods
+        if [[ -d /var/log/pods ]]; then
+                tar -${args}rf $tar_file /var/log/pods
+        else
+                touch var_logs_pod_missing
+                tar -${args}rf $tar_file var_logs_pod_missing
+                rm var_logs_pod_missing
+        fi
 }
 
 path=$1
@@ -618,6 +643,13 @@ osds_path=${osds_root_dir:-/osds_data}
         sep 'end bundle'
 ) >info-complete.txt
 
+( 
+        sep 'begin logs'
+        echo "version $VER"
+        logs
+        sep 'end logs'
+) >logs.txt
+
 dir=$(dirname "$(readlink -f "$0")")
 
 #cat info-complete.txt | grep -Evf $dir/exclude.txt > info.txt # some observed issues with excluding text
@@ -637,6 +669,10 @@ if ! $nobundle; then
                 files+=' info.txt'
         fi
 
+        if [[ -f logs.txt ]]; then
+                files+=' logs.txt'
+        fi
+
         if [[ -f info-complete.txt ]]; then
                 files+=' info-complete.txt'
         fi
@@ -647,6 +683,10 @@ if ! $nobundle; then
 
         if [[ -d $osds_path ]]; then
                 files+=" $osds_path"
+        fi
+
+        if [[ -f jq_missing ]]; then
+                files+=' jq_missing'
         fi
 
         echo Generating bundle $file
@@ -661,6 +701,11 @@ if ! $nobundle; then
         fi
 
         ls -lh $file
+
+        if [[ -f jq_missing ]]; then
+                rm jq_missing
+        fi
+        
 fi
 
 echo -e "\nAlways provide info.txt with any support tickets. \c"
