@@ -9,6 +9,8 @@ include_previous=false
 isroot=false
 nonroot=false
 log_args=''
+cli="$*"
+script="$(readlink -f "$0")"
 
 ex3() {
 
@@ -138,10 +140,10 @@ sep() {
         >&2 echo -n '.' 
         echo
         echo ":--- $1"
-        echo
 }
 
 sep2() {
+        echo
         echo ":------ $1 -- $2"
         echo
 }
@@ -384,14 +386,14 @@ logs() {
 
         # given namespace
         kubectl get pods -n $namespace --no-headers 2>/dev/null | awk '{ print $1 }' | while read pod; do
-                sep2 $pod ${FUNCNAME[0]}
-                kubectl logs -n $namespace $pod $log_args
-                echo
                 if $include_previous; then
                         sep2 $pod "${FUNCNAME[0]} -- previous"
                         kubectl logs -n $namespace $pod $log_args --previous 2>&1
                         echo
                 fi                
+                sep2 $pod ${FUNCNAME[0]}
+                kubectl logs -n $namespace $pod $log_args
+                echo
         done
 
         #if $include_previous; then
@@ -631,6 +633,9 @@ osds_path=${osds_root_dir:-/osds_data}
 ( 
         sep 'begin bundle'
         echo "version $VER"
+        echo
+        echo $script $cli
+        echo
         gather $path $message_dir_path $ace_dir_path 
         sep 'end bundle'
 ) >info-complete.txt
