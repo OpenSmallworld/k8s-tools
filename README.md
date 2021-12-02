@@ -54,13 +54,22 @@ If ```KUBECONFIG``` is not defined, you can point to an alternative file using t
 
 If a pod has restarted and you want to include the logs fronm the previous instance, use the ```--include-previous``` or ```--p``` option.
 
+If you need to restrict the log output, you can use the ```--since``` or ```-s``` option. Valid units are ```h```,```m```,```s```. Examples of this are:
+
+```bash
+--since=30m # last 30 minutes
+--since=3h # last 3 hours
+-s 72h # last 3 days
+```
+
 To display all options, use the ```--help``` option.
 
 #### Example
 
-You should expect to see a simple ```...................``` as output. If you see a warning (shown below), these can be ignored. If you see errors, including those mentioning port numbers, then you have either run as the wrong user or there is a problem with your KUBECONFIG environment variable.
+You should expect to see a simple ```...................``` as output. If you see a warning (shown below), these can be ignored. If you see errors, including those mentioning port numbers, then you have either run as the wrong user, there is a problem with your KUBECONFIG environment variable or an error with the script. **Please include any errors with the case**.
 
 ```bash
+[swadmin@k8s k8s-tools]$ git pull # recommended
 [swadmin@k8s k8s-tools]$ sudo bash bundle.sh /opt/sw/gss-5.2.5/kubernetes_scripts/pdi_input_manifest.yaml 
 ...............Warning: extensions/v1beta1 Ingress is deprecated in v1.14+, unavailable in v1.22+; use networking.k8s.io/v1 Ingress
 ....
