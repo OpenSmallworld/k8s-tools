@@ -480,7 +480,7 @@ Usage: $0 </path/to/pdi_input_manifest.yaml>
         -p|--include-previous
                 Include any previous log files, even for running pods
         -z|--no-bundle
-                Do not create the support bundle, only info.txt
+                Do not create the support bundle, only info.txt and logs.txt
         -d|--debug
                 Debug running script by echoing commands
         -N|--non-root
@@ -705,12 +705,12 @@ if ! $nobundle; then
         
 fi
 
-echo -e "\nAlways provide info.txt with any support tickets. \c"
+echo -e "\nAlways provide a minimum of info.txt and logs.txt with any support tickets. \c"
 
 if $nobundle; then
         echo -e "info-complete.txt is not required.\c"
 else
-        echo -e "$file is only required when requested.\c"
+        echo -e "$file is also recommended.\c"
 fi
 
 echo -e "\n"
