@@ -1,4 +1,4 @@
-VER=35
+VER=36
 
 namespace='gss-prod' # default
 kubeconfig=''
@@ -514,14 +514,24 @@ pod_logs() {
 
         tar_file=$1
         args=$2
+        files=""
 
-        if [[ -d /var/log/pods ]]; then
-                tar -${args}rf $tar_file /var/log/pods
+        if [[ -d /var/log/containers ]]; then
+                files+="/var/log/containers "
         else
-                touch var_logs_pod_missing
-                tar -${args}rf $tar_file var_logs_pod_missing
-                rm var_logs_pod_missing
+                touch var_log_containers_missing
+                files+="var_log_containers_missing "
         fi
+
+        if [[ -d /var/log/pods ]]; then 
+                files+="/var/log/pods "
+        else
+                touch var_log_pods_missing
+                files+="var_log_pods_missing "
+        fi
+
+        tar -${args}rf $tar_file $files
+        rm -f var_log_containers_missing var_log_pods_missing
 }
 
 path=$1
@@ -633,6 +643,7 @@ osds_path=${osds_root_dir:-/osds_data}
 ( 
         sep 'begin bundle'
         echo "version $VER"
+        echo "timestamp $(date +%s)"
         echo
         echo $script $cli
         echo
