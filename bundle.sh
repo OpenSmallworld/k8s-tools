@@ -640,10 +640,12 @@ fi
 root_path=${root_path:-/smallworld}
 osds_path=${osds_root_dir:-/osds_data}
 
+ts=$(date +%s)
+
 ( 
         sep 'begin bundle'
         echo "version $VER"
-        echo "timestamp $(date +%s)"
+        echo "timestamp $ts"
         echo
         echo $script $cli
         echo
@@ -654,6 +656,7 @@ osds_path=${osds_root_dir:-/osds_data}
 ( 
         sep 'begin logs'
         echo "version $VER"
+        echo "timestamp $ts"
         logs
         sep 'end logs'
 ) >logs.txt
