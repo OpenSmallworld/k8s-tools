@@ -34,6 +34,8 @@ Gather data into a support "bundle" for diagnosing issues.
 
 #### Usage
 
+**Note**: It is important to run the bundle script from the deployment node, or a node which has docker and Kubernetes installed.
+
 In general, later versions of the script are backwards compatible with earlier versions, i.e. v526 can be used with GSS 5.2.2.
 The exception to this is v521/GSS 5.2.1.
 
