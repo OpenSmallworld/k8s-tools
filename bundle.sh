@@ -1,6 +1,7 @@
-VER=36
+VER=37
 
 namespace='gss-prod' # default
+dummy=''
 kubeconfig=''
 osds_root_dir=''
 nobundle=false
@@ -8,6 +9,9 @@ use_modelit=false
 include_previous=false
 isroot=false
 nonroot=false
+update=true
+update_ca_trust=false
+update_ca_certificates=false
 log_args=''
 cli="$*"
 script="$(readlink -f "$0")"
@@ -245,7 +249,7 @@ files() {
 info() {
         sep ${FUNCNAME[0]}
         sep2 "kubectl version" ${FUNCNAME[0]}
-        kubectl version
+        kubectl version --output=yaml
         echo
         sep2 "docker version" ${FUNCNAME[0]}
         docker version
@@ -317,17 +321,30 @@ certificates() {
                 fi
 
                 if [[ ! -z $(which update-ca-trust 2> /dev/null) ]]; then
+                        update_ca_trust=true
+                fi
+
+                if $update && $update_ca_trust; then
                         if [[ -f $osds_root_dir/ssl/ca/ca.cert.pem ]]; then
                                 yum -y install ca-certificates
                                 update-ca-trust force-enable
-                                cp $osds_root_dir/ssl/ca/ca.cert.pem /etc/pki/ca-trust/source/anchors/
-                                update-ca-trust extract
-                                openssl verify -verbose -purpose sslserver -CApath $osds_root_dir/ssl/ca $osds_root_dir/ssl/cert/ssl.cert.pem
-                                echo
                         fi
                 fi
 
+                cp $osds_root_dir/ssl/ca/ca.cert.pem /etc/pki/ca-trust/source/anchors/
+
+                if $update && $update_ca_trust; then
+                        update-ca-trust extract
+                fi
+
+                openssl verify -verbose -purpose sslserver -CApath $osds_root_dir/ssl/ca $osds_root_dir/ssl/cert/ssl.cert.pem
+                echo
+
                 if [[ ! -z $(which update-ca-certificates 2> /dev/null) ]]; then
+                        update_ca_certificates=true
+                fi
+
+                if $update && $update_ca_certificates; then
                         if [[ -f $osds_root_dir/ssl/ca/ca.cert.pem ]]; then
                                 cp $osds_root_dir/ssl/ca/ca.cert.pem /usr/local/share/ca-certificates/
                                 update-ca-certificates
@@ -395,22 +412,6 @@ logs() {
                 kubectl logs -n $namespace $pod $log_args
                 echo
         done
-
-        #if $include_previous; then
-        #        string='(Completed)'
-        #else
-        #        string='(Running|Completed)'
-        #fi
-        
-        # get the previous log of any non-running pods
-        #kubectl get pods -A --no-headers 2>/dev/null | grep -vE $string | awk '{ print $1 ":" $2 }' | while read info; do 
-        # kubectl get pods -A --no-headers 2>/dev/null | awk '{ print $1 ":" $2 }' | while read info; do 
-        #         sep2 $info "${FUNCNAME[0]} -- previous"
-        #         ns=`echo $info | cut -d : -f 1`
-        #         pod=`echo $info | cut -d : -f 2`
-        #         kubectl logs -n $ns $pod --previous 2>&1
-        #         echo
-        # done
 }
 
 describe() {
@@ -470,7 +471,7 @@ usage() {
 Usage: $0 </path/to/pdi_input_manifest.yaml>
 
         -n|--namespace <namespace>
-                Use alternate namespace <namespace>
+                Use alternate namespace <namespace> (deprecated - now read from manifest)
         -k|--kubeconfig </path/to/kubeconfig>
                 Use alternate config file to that specified in KUBECONFIG, or where not defined
         -o|--osds_root_dir </path/to/osds_root_dir>
@@ -487,6 +488,10 @@ Usage: $0 </path/to/pdi_input_manifest.yaml>
                 Run as a non-root user. This may cause some information to not be captured as well as errors while running!
         -h|--help
                 This help
+        -s|--since <time-period>
+                Limit logs. Examples of time period are --since 10m, --since 1h, --since 2023-04-25T10:46:00.000000000Z
+        --no-update
+                Do not update any CA certificates
 
 EOD
         exit 1
@@ -542,14 +547,17 @@ fi
 
 shift
 
+namespace=$(grep GSS_NAMESPACE $path | cut -f 2 -d : | tr -d '[:space:]' | tr -d '[:punct:]')
+
 while [[ $# -gt 0 ]]
 do
   key="$1"
 
   case $key in
     -n|--namespace)
-      namespace=$2
+      dummy=$2
       shift; shift
+      echo "--namespace option is now deprecated. Taking namespace '$namespace' from manifest"
       ;;
     -k|--kubeconfig)
       kubeconfig=$2
@@ -584,11 +592,15 @@ do
       exit
       ;;
     -s|--since)
-      log_args+="$1 $2"
+      log_args+="--since $2"
       shift; shift
       ;;
+    --no-update)
+      update=false
+      shift
+      ;;
     *)
-      echo -e "Do no understand argument \"$key\"\n"
+      echo -e "Do not understand argument \"$key\"\n"
       usage
       exit
   esac
@@ -602,10 +614,6 @@ if ! $nonroot; then
         fi
         isroot=true
 fi
-
-#if [[ $(id -u) -eq 0 ]]; then
-#       isroot=true
-#fi
 
 if [[ -z $KUBECONFIG ]]; then
         if [[ ! -z $kubeconfig ]]; then
@@ -640,6 +648,7 @@ fi
 root_path=${root_path:-/smallworld}
 osds_path=${osds_root_dir:-/osds_data}
 
+
 ts=$(date +%s)
 
 ( 
@@ -669,12 +678,11 @@ mv info-complete.txt info.txt
 echo '' # terminate progress indicator line
 
 args=''
+files=''
 
 if ! $nobundle; then
         now=$(date --utc +%Y%m%d_%H%M%SZ)
         file=bundle_${now}.tar${suffix}
-
-        files=''
 
         if [[ -f info.txt ]]; then
                 files+=' info.txt'
@@ -682,6 +690,10 @@ if ! $nobundle; then
 
         if [[ -f logs.txt ]]; then
                 files+=' logs.txt'
+        fi
+
+        if [[ -f output.txt ]]; then
+                files+=' output.txt'
         fi
 
         if [[ -f info-complete.txt ]]; then
@@ -715,8 +727,7 @@ if ! $nobundle; then
 
         if [[ -f jq_missing ]]; then
                 rm jq_missing
-        fi
-        
+        fi       
 fi
 
 echo -e "\nAlways provide a minimum of info.txt and logs.txt with any support tickets. \c"
