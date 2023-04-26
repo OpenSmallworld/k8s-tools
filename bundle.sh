@@ -650,11 +650,13 @@ osds_path=${osds_root_dir:-/osds_data}
 
 
 ts=$(date +%s)
+zulu=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
 ( 
         sep 'begin bundle'
         echo "version $VER"
         echo "timestamp $ts"
+        echo "time $zulu"
         echo
         echo $script $cli
         echo
@@ -666,6 +668,7 @@ ts=$(date +%s)
         sep 'begin logs'
         echo "version $VER"
         echo "timestamp $ts"
+        echo "time $zulu"
         logs
         sep 'end logs'
 ) >logs.txt
