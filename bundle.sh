@@ -716,7 +716,7 @@ if ! $nobundle; then
         fi
 
         echo Generating bundle $file
-        tar -${args}cf $file $files
+        tar -${args}cf $file --exclude kubeconfig $files
 
         deploy_logs $(pwd)/$file $args
         pod_logs $(pwd)/$file $args
