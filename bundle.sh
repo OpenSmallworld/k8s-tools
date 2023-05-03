@@ -1,4 +1,4 @@
-VER=37
+VER=38
 
 namespace='gss-prod' # default
 dummy=''
@@ -9,6 +9,8 @@ use_modelit=false
 include_previous=false
 isroot=false
 nonroot=false
+deploy_logs=true
+var_logs=true
 update=true
 update_ca_trust=false
 update_ca_certificates=false
@@ -492,12 +494,16 @@ Usage: $0 </path/to/pdi_input_manifest.yaml>
                 Limit logs. Examples of time period are --since 10m, --since 1h, --since 2023-04-25T10:46:00.000000000Z
         --no-update
                 Do not update any CA certificates
+        --no-deploy-logs
+                Do not include volume mountpoint logs
+        --no-var-logs
+                Do not include /var/(container|pods)/logs
 
 EOD
         exit 1
 }
 
-deploy_logs() {
+gather_deploy_logs() {
 
         tar_file=$1
         args=$2
@@ -515,7 +521,7 @@ deploy_logs() {
         fi
 }
 
-pod_logs() {
+gather_var_logs() {
 
         tar_file=$1
         args=$2
@@ -599,6 +605,14 @@ do
       update=false
       shift
       ;;
+    --no-deploy-logs)
+      deploy_logs=false
+      shift
+      ;;
+    --no-var-logs)
+      var_logs=false
+      shift
+      ;;
     *)
       echo -e "Do not understand argument \"$key\"\n"
       usage
@@ -669,6 +683,9 @@ zulu=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
         echo "version $VER"
         echo "timestamp $ts"
         echo "time $zulu"
+        echo
+        echo $script $cli
+        echo
         logs
         sep 'end logs'
 ) >logs.txt
@@ -715,18 +732,23 @@ if ! $nobundle; then
                 files+=' jq_missing'
         fi
 
-        echo Generating bundle $file
-        tar -${args}cf $file --exclude kubeconfig $files
+        echo Generating bundle $(pwd)/$file
+        tar -${args}cf $(pwd)/$file --exclude kubeconfig $files
 
-        deploy_logs $(pwd)/$file $args
-        pod_logs $(pwd)/$file $args
+        if $deploy_logs; then
+                gather_deploy_logs $(pwd)/$file $args
+        fi
+
+        if $var_logs; then
+                gather_var_logs $(pwd)/$file $args
+        fi
 
         if [[ ! -z $(which gzip 2> /dev/null) ]]; then
                 gzip $file
                 file+=".gz"
         fi
 
-        ls -lh $file
+        ls -lh $(pwd)/$file
 
         if [[ -f jq_missing ]]; then
                 rm jq_missing
@@ -738,7 +760,7 @@ echo -e "\nAlways provide a minimum of info.txt and logs.txt with any support ti
 if $nobundle; then
         echo -e "info-complete.txt is not required.\c"
 else
-        echo -e "$file is also recommended.\c"
+        echo -e "$(pwd)/$file is also recommended.\c"
 fi
 
 echo -e "\n"
