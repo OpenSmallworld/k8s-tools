@@ -553,7 +553,7 @@ fi
 
 shift
 
-namespace=$(grep GSS_NAMESPACE $path | cut -f 2 -d : | tr -d '[:space:]' | tr -d '[:punct:]')
+namespace=$(grep GSS_NAMESPACE $path | cut -f 2 -d : | tr -d '[:space:]' | tr -d \" | tr -d \') # cannot use "tr -d '[:punct:]'" because namespace may contain a hyphen
 
 while [[ $# -gt 0 ]]
 do
@@ -671,6 +671,7 @@ zulu=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
         echo "version $VER"
         echo "timestamp $ts"
         echo "time $zulu"
+        echo "namespace $namespace"
         echo
         echo $script $cli
         echo
@@ -683,6 +684,7 @@ zulu=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
         echo "version $VER"
         echo "timestamp $ts"
         echo "time $zulu"
+        echo "namespace $namespace"
         echo
         echo $script $cli
         echo
