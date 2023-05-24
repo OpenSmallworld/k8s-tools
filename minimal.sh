@@ -163,13 +163,13 @@ info() {
         kubectl version --output=yaml
         echo
         sep2 "docker version" ${FUNCNAME[0]}
-        docker version
+        docker version 2> /dev/null
         echo
         sep2 "docker info" ${FUNCNAME[0]}
-        docker info 2>&1
+        docker info 2> /dev/null
         echo
         sep2 "docker images" ${FUNCNAME[0]}
-        docker images
+        docker images 2> /dev/null
         echo
 }
 
