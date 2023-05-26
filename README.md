@@ -83,3 +83,41 @@ Always provide info.txt with any support tickets. bundle_20201027_211513Z.tar.gz
 
 [swadmin@k8s k8s-tools]$
 ```
+
+### id-check.jar
+
+Validate UAA configuration (specifically for LDAP connections) and query a known username.
+
+#### Usage
+
+Copy the ```id-check.jar``` file onto the sws-uaa pod, shell into it and run directly.
+
+#### Example
+
+```bash
+[root@k8s ~]# kubectl get po -A | grep sws-uaa
+<namespace>            sws-uaa-deployment-*********-*****                                1/1     Running     0               36h
+[root@k8s ~]# kubectl cp /path/to/id-check.jar sws-uaa-deployment-*********-*****:/tmp/id-check.jar -n <namespace>
+Defaulted container "uaa-uaa" out of: uaa-uaa, nslookup-uaa-postgresql-svc (init), init-uaa-postgresql-svc (init)
+[root@k8s ~]# kubectl exec -it pod/sws-uaa-deployment-*********-***** -n <namespace> -- bash
+bash-4.4$ java -jar /tmp/id-check.jar <username>
+Using /usr/local/uaa-config/uaa.yml
+Sending Ping Request to <server-name>/<ip-address>
+Host is reachable
+java.naming.factory.initial=com.sun.jndi.ldap.LdapCtxFactory
+java.naming.referral=follow
+java.naming.security.principal=<distinguished-name>
+com.sun.jndi.ldap.connect.timeout=5000
+java.naming.ldap.version=3
+com.sun.jndi.ldap.read.timeout=5000
+java.naming.provider.url=<server-uri>
+java.naming.security.authentication=simple
+java.naming.security.credentials=<redacted>
+connecting to <server-uri>...
+successfully connected to <server-uri>
+Found: <found-distinguished-name>
+Took: <n>ms
+bash-4.4$ 
+```
+
+If you add a different certificate store to the pod, you will need to add arguments pointing to the file, for example: ```java -Djavax.net.ssl.trustStore=/path/to/cacerts -jar /tmp/id-check.jar <username>```
