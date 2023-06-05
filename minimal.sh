@@ -22,7 +22,7 @@ manifest() {
 
         sep ${FUNCNAME[0]}
 
-        sep2 pdc_input_manifest.yaml ${FUNCNAME[0]}
+        sep2 $1 ${FUNCNAME[0]}
         cat $1
         echo
 
