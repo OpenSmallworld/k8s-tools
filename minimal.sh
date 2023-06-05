@@ -253,7 +253,7 @@ logs() {
 describe() {
         sep ${FUNCNAME[0]}
 
-                for type in deploy svc pods daemonsets pv pvc cronjobs jobs configmaps secrets ingress role rolebinding sa; do
+                for type in deploy svc pods daemonsets pv pvc cronjobs jobs configmaps secrets role rolebinding sa; do
                         kubectl get namespace --no-headers 2>/dev/null | awk '{ print $1 }' | while read ns; do
                                         sep2 "$type -- $namespace" ${FUNCNAME[0]}
                                         kubectl describe $type -n $namespace 2>/dev/null
@@ -293,7 +293,7 @@ gather() {
         files
         nodes
         pods
-        nexus
+        # nexus
         describe
 }
 
