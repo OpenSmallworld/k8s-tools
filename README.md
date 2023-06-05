@@ -8,12 +8,6 @@ Scripts to aid/diagnose GSS on Kubernetes installations.
 
 ```bash
 git clone https://github.com/OpenSmallworld/k8s-tools.git 
-# or if you want a specific version
-git clone --branch <version> https://github.com/OpenSmallworld/k8s-tools.git # for example v526
-# list available branches/versions
-git branch -A 
-# checkout alternate version
-git checkout <version>
 ```
 
 ### Update installation
@@ -36,15 +30,10 @@ Gather data into a support "bundle" for diagnosing issues.
 
 **Note**: It is important to run the bundle script from the deployment node, or a node which has docker and Kubernetes installed.
 
-In general, later versions of the script are backwards compatible with earlier versions, i.e. v526 can be used with GSS 5.2.2.
-The exception to this is v521/GSS 5.2.1.
-
 ```bash
 git pull # recommended
-sudo bash bundle.sh </path/to/pdc_input_manifest.yaml>
+sudo bash bundle.sh </path/to/pdi_input_manifest.yaml>
 ```
-
-If you have deployed to a namespace other than gss-prod, then use the ```--namespace <namespace>``` or ```-n <namespace>``` option.
 
 To avoid creating the bundled tar archive, use the ```--no-bundle``` or ```-z``` option.
 
@@ -121,3 +110,16 @@ bash-4.4$
 ```
 
 If you add a different certificate store to the pod, you will need to add arguments pointing to the file, for example: ```java -Djavax.net.ssl.trustStore=/path/to/cacerts -jar /tmp/id-check.jar <username>```
+
+### minimal.sh
+
+Gather minimal data data into a single file called `minimal.txt`. This is sometimes required in the cases where getting the environment bootstrapped is problematic.
+
+#### Usage
+
+**Note**: It is important to run the bundle script from the deployment node, or a node which has docker and Kubernetes installed.
+
+```bash
+git pull # recommended
+sudo bash minimal.sh </path/to/pdi_input_manifest.yaml>
+```
