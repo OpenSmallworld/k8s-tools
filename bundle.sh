@@ -1,4 +1,4 @@
-VER=38
+VER=39
 
 namespace='gss-prod' # default
 dummy=''
@@ -6,7 +6,7 @@ kubeconfig=''
 osds_root_dir=''
 nobundle=false
 use_modelit=false
-include_previous=false
+include_previous=true
 isroot=false
 nonroot=false
 deploy_logs=true
@@ -216,7 +216,10 @@ process() {
         sep ${FUNCNAME[0]}
         if [[ ! -z $(which systemctl 2> /dev/null) ]]; then
                 systemctl status
-                systemctl --no-pager --full status nfs
+                systemctl status nfs 2> /dev/null
+                if [[ $? -eq 0 ]]; then
+                        systemctl --no-pager --full status nfs
+                fi
                 systemctl --no-pager --full status docker
                 systemctl --no-pager --full status kubelet
         else
@@ -261,6 +264,28 @@ info() {
         echo
         sep2 "docker images" ${FUNCNAME[0]}
         docker images
+        echo
+}
+
+journalctl_() {
+        sep ${FUNCNAME[0]}
+
+        if [[ ! -z $(which journalctl 2> /dev/null) ]]; then
+                sep2 "docker" ${FUNCNAME[0]}
+                journalctl -xeu docker --no-pager
+                sep2 "kubelet" ${FUNCNAME[0]}
+                journalctl -xeu kubelet --no-pager
+                systemctl status nfs 2> /dev/null
+                if [[ $? -eq 0 ]]; then
+                        sep2 "nfs-server" ${FUNCNAME[0]}
+                        journalctl -xeu nfs-server --no-pager
+                        sep2 "nfs-client" ${FUNCNAME[0]}
+                        journalctl -xeu nfs-client --no-pager
+                fi
+        else
+                echo "*** WARNING: journalctl not present"
+        fi
+
         echo
 }
 
@@ -457,6 +482,7 @@ gather() {
         disks
         process
         files
+        journalctl_
         nodes
         pods
         endpoints
@@ -480,8 +506,8 @@ Usage: $0 </path/to/pdi_input_manifest.yaml>
                 Override osds_root_dir. Commonly used for older manifests where this was not defined
         -m|--use_modelit_dir_path
                 Use MODELIT_DIR_PATH from manifest rather than ACE_DIR_PATH
-        -p|--include-previous
-                Include any previous log files, even for running pods
+        -l|--include-latest
+                Include only latest log files. Defaut is to include previous logs.
         -z|--no-bundle
                 Do not create the support bundle, only info.txt and logs.txt
         -d|--debug
@@ -577,8 +603,8 @@ do
       use_modelit=true
       shift
       ;;
-    -p|--include-previous)
-      include_previous=true
+    -l|--include-latest)
+      include_previous=false
       shift
       ;;
     -z|--no-bundle)
