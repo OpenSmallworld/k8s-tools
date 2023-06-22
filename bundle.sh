@@ -1,6 +1,6 @@
 VER=39
 
-namespace='gss-prod' # default
+default_namespace='gss-prod'
 dummy=''
 kubeconfig=''
 osds_root_dir=''
@@ -499,7 +499,7 @@ usage() {
 Usage: $0 </path/to/pdi_input_manifest.yaml>
 
         -n|--namespace <namespace>
-                Use alternate namespace <namespace> (deprecated - now read from manifest)
+                Override the namespace <namespace>. Not usually required because the namespace is now derived from the manifest
         -k|--kubeconfig </path/to/kubeconfig>
                 Use alternate config file to that specified in KUBECONFIG, or where not defined
         -o|--osds_root_dir </path/to/osds_root_dir>
@@ -587,9 +587,9 @@ do
 
   case $key in
     -n|--namespace)
-      dummy=$2
+      echo "*** Warning overriding namespace '$namespace' from manifest"
+      namespace=$2
       shift; shift
-      echo "--namespace option is now deprecated. Taking namespace '$namespace' from manifest"
       ;;
     -k|--kubeconfig)
       kubeconfig=$2
@@ -645,6 +645,10 @@ do
       exit
   esac
 done
+
+if [[ -z $namespace ]]; then
+        namespace=$default_namespace
+fi
 
 # avoid permissions errors
 if ! $nonroot; then
