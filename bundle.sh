@@ -1,4 +1,4 @@
-VER=39
+VER=40
 
 default_namespace='gss-prod'
 dummy=''
@@ -17,6 +17,7 @@ update_ca_certificates=false
 log_args=''
 cli="$*"
 script="$(readlink -f "$0")"
+default_k8s_port=30443
 
 ex3() {
 
@@ -321,11 +322,11 @@ certificates() {
 
         if [[ ! -z $(which curl 2> /dev/null) ]]; then
                 if [[ -f $osds_root_dir/ssl/ca/ca.cert.pem ]]; then
-                        echo curl -v --cacert $osds_root_dir/ssl/ca/ca.cert.pem https://$(hostname -f):30443
-                        no_proxy=$(hostname -f),$no_proxy curl -v --cacert $osds_root_dir/ssl/ca/ca.cert.pem https://$(hostname -f):30443/ 2>&1
+                        echo no_proxy=$(hostname -f) curl -v --cacert $osds_root_dir/ssl/ca/ca.cert.pem https://$(hostname -f):$k8s_port
+                        no_proxy=$(hostname -f) curl -v --cacert $osds_root_dir/ssl/ca/ca.cert.pem https://$(hostname -f):$k8s_port/ 2>&1
                         echo
-                        echo curl -v -k https://$(hostname -f):30443
-                        no_proxy=$(hostname -f),$no_proxy curl -v -k https://$(hostname -f):30443/ 2>&1
+                        echo no_proxy=$(hostname -f) curl -v -k https://$(hostname -f):$k8s_port
+                        no_proxy=$(hostname -f) curl -v -k https://$(hostname -f):$k8s_port/ 2>&1
                         echo
                 fi
         else
@@ -571,6 +572,8 @@ gather_var_logs() {
         rm -f var_log_containers_missing var_log_pods_missing
 }
 
+# ---
+
 path=$1
 
 if [[ -z $path || ! -f $path ]]; then
@@ -580,6 +583,8 @@ fi
 shift
 
 namespace=$(grep GSS_NAMESPACE $path | cut -f 2 -d : | tr -d '[:space:]' | tr -d \" | tr -d \') # cannot use "tr -d '[:punct:]'" because namespace may contain a hyphen
+k8s_port=$(grep K8SPORT $path | cut -f 2 -d : | tr -d '[:space:]' | tr -d \" | tr -d \')
+k8s_port=${k8s_port:-$default_k8s_port}
 
 while [[ $# -gt 0 ]]
 do
