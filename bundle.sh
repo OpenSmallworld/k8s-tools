@@ -1,4 +1,4 @@
-VER=40
+VER=41
 
 default_namespace='gss-prod'
 dummy=''
@@ -322,11 +322,11 @@ certificates() {
 
         if [[ ! -z $(which curl 2> /dev/null) ]]; then
                 if [[ -f $osds_root_dir/ssl/ca/ca.cert.pem ]]; then
-                        echo no_proxy=$(hostname -f) curl -v --cacert $osds_root_dir/ssl/ca/ca.cert.pem https://$(hostname -f):$k8s_port
-                        no_proxy=$(hostname -f) curl -v --cacert $osds_root_dir/ssl/ca/ca.cert.pem https://$(hostname -f):$k8s_port/ 2>&1
+                        echo no_proxy=$k8s_host curl -v --cacert $osds_root_dir/ssl/ca/ca.cert.pem https://$k8s_host:$k8s_port
+                        no_proxy=$k8s_host curl -v --cacert $osds_root_dir/ssl/ca/ca.cert.pem https://$k8s_host:$k8s_port/ 2>&1
                         echo
-                        echo no_proxy=$(hostname -f) curl -v -k https://$(hostname -f):$k8s_port
-                        no_proxy=$(hostname -f) curl -v -k https://$(hostname -f):$k8s_port/ 2>&1
+                        echo no_proxy=$k8s_host curl -v -k https://$k8s_host:$k8s_port
+                        no_proxy=$k8s_host curl -v -k https://$k8s_host:$k8s_port/ 2>&1
                         echo
                 fi
         else
@@ -583,6 +583,7 @@ fi
 shift
 
 namespace=$(grep GSS_NAMESPACE $path | cut -f 2 -d : | tr -d '[:space:]' | tr -d \" | tr -d \') # cannot use "tr -d '[:punct:]'" because namespace may contain a hyphen
+k8s_host=$(grep K8SHOST $path | cut -f 2 -d : | tr -d '[:space:]' | tr -d \" | tr -d \')
 k8s_port=$(grep K8SPORT $path | cut -f 2 -d : | tr -d '[:space:]' | tr -d \" | tr -d \')
 k8s_port=${k8s_port:-$default_k8s_port}
 
