@@ -365,6 +365,7 @@ certificates() {
                         update-ca-trust extract
                 fi
 
+                echo openssl verify -verbose -purpose sslserver -CApath $osds_root_dir/ssl/ca $osds_root_dir/ssl/cert/ssl.cert.pem
                 openssl verify -verbose -purpose sslserver -CApath $osds_root_dir/ssl/ca $osds_root_dir/ssl/cert/ssl.cert.pem
                 echo
 
