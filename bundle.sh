@@ -1,4 +1,4 @@
-VER=41
+VER=42
 
 default_namespace='gss-prod'
 dummy=''
@@ -157,6 +157,8 @@ sep2() {
 
 basic() {
         sep ${FUNCNAME[0]}
+        echo ""
+
         date
         TZ=UTC date +%FT%T%Z
         echo 
@@ -174,6 +176,8 @@ basic() {
 
 cpu() {
         sep ${FUNCNAME[0]}
+        echo ""
+
         cat /proc/cpuinfo
         echo
         sudo dmesg | grep "Hypervisor detected"
@@ -182,12 +186,16 @@ cpu() {
 
 memory() {
         sep memory ${FUNCNAME[0]}
+        echo ""
+
         cat /proc/meminfo
         echo
 }
 
 network() {
         sep ${FUNCNAME[0]}
+        echo ""
+
         host=$(hostname --fqdn)
         echo "Hostname: $host ($(hostname))"
         echo "Domainname: $(domainname)"
@@ -205,6 +213,8 @@ network() {
 
 disks() {
         sep ${FUNCNAME[0]}
+        echo ""
+
         df -h
         echo
         #parted /dev/sda print
@@ -215,6 +225,8 @@ disks() {
 
 process() {
         sep ${FUNCNAME[0]}
+        echo ""
+
         if [[ ! -z $(which systemctl 2> /dev/null) ]]; then
                 systemctl status
                 systemctl status nfs 2> /dev/null
@@ -312,6 +324,8 @@ pods() {
 
 endpoints() {
         sep ${FUNCNAME[0]}
+        echo ""
+        
         kubectl get endpoints -A
         echo
 }
@@ -386,8 +400,51 @@ certificates() {
         fi
 }
 
+check_kubeconfig() {
+        counter=$1
+        admin_conf=$2
+        file=$3
+        message=${4:-"*** WARNING: file $3 does not exist"}
+
+        echo -n "($counter of 4) "
+
+        if [[ -f $file ]]; then
+                ls -l $file
+                if [[ $(diff $admin_conf $file | wc -l)  -gt 0 ]]; then
+                        echo "*** WARNING: difference between $admin_conf and $file"
+                fi
+        else
+                echo "*** WARNING: file $file does not exist"
+        fi
+}
+
+kubeconfig_() {
+        sep ${FUNCNAME[0]}
+        echo ""
+
+        admin_conf="/etc/kubernetes/admin.conf"
+        ls -l $admin_conf
+
+        if [[ ! -z $SUDO_USER ]]; then
+                user_home=$(getent passwd $SUDO_USER | cut -d: -f6)
+                pathname="$user_home/.kube/config"
+                check_kubeconfig 1 $admin_conf $pathname "*** WARNING: file $pathname does not exist or cannot determine KUBECONFIG for user $SUDO_USER"
+        else
+                echo "*** WARNING: skipping SUDO_USER as not set"
+        fi
+
+        root_home=$(getent passwd root | cut -d: -f6)
+        pathname="$root_home/.kube/config"
+        check_kubeconfig 2 $admin_conf $pathname "*** WARNING: file $pathname does not exist or cannot determine KUBECONFIG for user root"
+
+        check_kubeconfig 3 $admin_conf "$kubeconfig"
+        check_kubeconfig 4 $admin_conf "$osds_root_dir/kubeconfig/config"
+
+}
+
 nexus() {
         sep ${FUNCNAME[0]}
+        echo ""
 
         kubectl get ingress -o yaml -n nexus
 }
@@ -489,6 +546,7 @@ gather() {
         pods
         endpoints
         if $isroot; then certificates; fi
+        if $isroot; then kubeconfig_; fi
         nexus
         describe
         #logs
@@ -673,6 +731,8 @@ if [[ -z $KUBECONFIG ]]; then
                 echo "*** Error: KUBECONFIG nor -k/--kubeconfig set"
                 exit 1
         fi
+else
+        kubeconfig=$KUBECONFIG
 fi
 
 message_dir_path=$(grep MESSAGES_DIR_PATH $path | cut -f2 -d"'" | cut -f1 -d"'")
@@ -698,7 +758,6 @@ fi
 
 root_path=${root_path:-/smallworld}
 osds_path=${osds_root_dir:-/osds_data}
-
 
 ts=$(date +%s)
 zulu=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
