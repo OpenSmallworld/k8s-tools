@@ -325,7 +325,7 @@ pods() {
 endpoints() {
         sep ${FUNCNAME[0]}
         echo ""
-        
+
         kubectl get endpoints -A
         echo
 }
@@ -337,10 +337,17 @@ certificates() {
         if [[ ! -z $(which curl 2> /dev/null) ]]; then
                 if [[ -f $osds_root_dir/ssl/ca/ca.cert.pem ]]; then
                         echo no_proxy=$k8s_host curl -v --cacert $osds_root_dir/ssl/ca/ca.cert.pem https://$k8s_host:$k8s_port
-                        no_proxy=$k8s_host curl -v --cacert $osds_root_dir/ssl/ca/ca.cert.pem https://$k8s_host:$k8s_port/ 2>&1
+                        no_proxy=$k8s_host curl -v --cacert $osds_root_dir/ssl/ca/ca.cert.pem https://$k8s_host:$k8s_port 2>&1
                         echo
                         echo no_proxy=$k8s_host curl -v -k https://$k8s_host:$k8s_port
-                        no_proxy=$k8s_host curl -v -k https://$k8s_host:$k8s_port/ 2>&1
+                        no_proxy=$k8s_host curl -v -k https://$k8s_host:$k8s_port 2>&1
+                        echo
+                        echo "(speculative attempt to use $k8s_host as a plain https application gateway)"
+                        echo no_proxy=$k8s_host curl -v --cacert $osds_root_dir/ssl/ca/ca.cert.pem https://$k8s_host
+                        no_proxy=$k8s_host curl -v --cacert $osds_root_dir/ssl/ca/ca.cert.pem https://$k8s_host 2>&1
+                        echo
+                        echo no_proxy=$k8s_host curl -v -k https://$k8s_host
+                        no_proxy=$k8s_host curl -v -k https://$k8s_host 2>&1
                         echo
                 fi
         else
