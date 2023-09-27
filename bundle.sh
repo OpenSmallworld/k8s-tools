@@ -1,4 +1,4 @@
-VER=42
+VER=43
 
 default_namespace='gss-prod'
 dummy=''
@@ -14,92 +14,94 @@ var_logs=true
 update=true
 update_ca_trust=false
 update_ca_certificates=false
+gitcheck=true
 log_args=''
 cli="$*"
 script="$(readlink -f "$0")"
 default_k8s_port=30443
+bundle="$(pwd)/bundle_$(date --utc +%Y%m%d_%H%M%SZ).tar"
 
 ex3() {
 
-  pod=$1
-  cmd=$2
+        pod=$1
+        cmd=$2
 
-  (kubectl exec -n $namespace $pod -- bash -c "$cmd") 2>&1
+        (kubectl exec -n $namespace $pod -- bash -c "$cmd") 2>&1
 }
 
 ex2() {
 
-  pod=$1
-  shift
+        pod=$1
+        shift
 
-  (kubectl exec -n $namespace $pod -- $*) 2>&1
+        (kubectl exec -n $namespace $pod -- $*) 2>&1
 }
 
 ex1() {
 
-  pod=$1
-  namespace=$2
-  shift; shift
+        pod=$1
+        namespace=$2
+        shift; shift
 
-  id=$(kubectl get po -n $namespace $pod -o jsonpath='{.status.containerStatuses[0].containerID}' | cut -c 10-21)
-  pid=$(docker inspect --format '{{ .State.Pid }}' $id)
+        id=$(kubectl get po -n $namespace $pod -o jsonpath='{.status.containerStatuses[0].containerID}' | cut -c 10-21)
+        pid=$(docker inspect --format '{{ .State.Pid }}' $id)
 
-  (nsenter -t ${pid} -n $*) 2>&1
+        (nsenter -t ${pid} -n $*) 2>&1
 }
 
 swmfs() {
 
-  message=$1
-  ace=$2
+        message=$1
+        ace=$2
 
-  sep ${FUNCNAME[0]}
+        sep ${FUNCNAME[0]}
 
-  if [[ -z $message || -z $ace ]]; then
-        echo "MESSAGES_DB_DIR and/or ACE_DB_DIR is unset"
-        return
-  fi
+        if [[ -z $message || -z $ace ]]; then
+                echo "MESSAGES_DB_DIR and/or ACE_DB_DIR is unset"
+                return
+        fi
 
-  pod=$(kubectl get po -n $namespace --no-headers | grep Running | grep "1/1" | awk '!/client-deployment|nexus|bifrost|postgres|uaa|solr|ingress|rabbitmq|gdal/ { print $1 }' | head -n 1)
+        pod=$(kubectl get po -n $namespace --no-headers | grep Running | grep "1/1" | awk '!/client-deployment|nexus|bifrost|postgres|uaa|solr|ingress|rabbitmq|gdal/ { print $1 }' | head -n 1)
 
-  echo '----------------------------------------------------------------------'
-  ip=$(echo $message | awk -F: '{ print $1 }')
+        echo '----------------------------------------------------------------------'
+        ip=$(echo $message | awk -F: '{ print $1 }')
 
-  echo "Ping $ip (from $(hostname))"
-  ping $ip -c 3
-  echo
+        echo "Ping $ip (from $(hostname))"
+        ping $ip -c 3
+        echo
 
-  if [[ -z $pod ]]; then
-    echo "No running pod found to check swmfs"
-    return
-  fi
+        if [[ -z $pod ]]; then
+                echo "No running pod found to check swmfs"
+                return
+        fi
 
-  echo "Ping $ip (from $pod)"
-  ex1 $pod $namespace ping $ip -c 3
-  echo
+        echo "Ping $ip (from $pod)"
+        ex1 $pod $namespace ping $ip -c 3
+        echo
 
-  swmfs_test=/Smallworld/core/bin/Linux.x86/swmfs_test
-  swlm_clerk=/Smallworld/core/etc/Linux.x86/swlm_clerk
+        swmfs_test=/Smallworld/core/bin/Linux.x86/swmfs_test
+        swlm_clerk=/Smallworld/core/etc/Linux.x86/swlm_clerk
 
-  echo '----------------------------------------------------------------------'
-  echo Validate directory $message
-  ex2 $pod $swmfs_test 22 $message *.ds
-  echo '----------------------------------------------------------------------'
-  echo Validate server using message.ds in $message
-  ex2 $pod $swmfs_test 13 $message message.ds
-  echo '----------------------------------------------------------------------'
-  echo Validate licence
-  cmd="SW_LICENCE_DB=$message/message.ds $swlm_clerk -o"
-  ex3 $pod "$cmd"
-  echo '----------------------------------------------------------------------'
-  echo Validate directory $ace
-  ex2 $pod $swmfs_test 22 $ace *.ds
-  echo '----------------------------------------------------------------------'
-  echo Validate access to $ace
-  ex2 $pod $swmfs_test 1 $ace bundle-$$.ds
-  ex2 $pod $swmfs_test 4 $ace bundle-$$.ds
-  echo '----------------------------------------------------------------------'
-  echo Validate access to ace.ds in $ace
-  ex2 $pod $swmfs_test 23 $ace ace.ds 100
+        echo '----------------------------------------------------------------------'
+        echo Validate directory $message
+        ex2 $pod $swmfs_test 22 $message *.ds
+        echo '----------------------------------------------------------------------'
+        echo Validate server using message.ds in $message
+        ex2 $pod $swmfs_test 13 $message message.ds
+        echo '----------------------------------------------------------------------'
+        echo Validate licence
+        cmd="SW_LICENCE_DB=$message/message.ds $swlm_clerk -o"
+        ex3 $pod "$cmd"
+        echo '----------------------------------------------------------------------'
+        echo Validate directory $ace
+        ex2 $pod $swmfs_test 22 $ace *.ds
+        echo '----------------------------------------------------------------------'
+        echo Validate access to $ace
+        ex2 $pod $swmfs_test 1 $ace bundle-$$.ds
+        ex2 $pod $swmfs_test 4 $ace bundle-$$.ds
+        echo '----------------------------------------------------------------------'
+        echo Validate access to ace.ds in $ace
+        ex2 $pod $swmfs_test 23 $ace ace.ds 100
 }
 
 manifest() {
@@ -510,29 +512,29 @@ logs() {
 describe() {
         sep ${FUNCNAME[0]}
 
-                for type in deploy svc pods daemonsets pv pvc cronjobs jobs configmaps secrets ingress role rolebinding sa; do
-                        kubectl get namespace --no-headers 2>/dev/null | awk '{ print $1 }' | while read ns; do
-                                        sep2 "$type -- $namespace" ${FUNCNAME[0]}
-                                        kubectl describe $type -n $namespace 2>/dev/null
-                                        echo
-                        done
+        for type in deploy svc pods daemonsets pv pvc cronjobs jobs configmaps secrets ingress role rolebinding sa; do
+                kubectl get namespace --no-headers 2>/dev/null | awk '{ print $1 }' | while read ns; do
+                                sep2 "$type -- $namespace" ${FUNCNAME[0]}
+                                kubectl describe $type -n $namespace 2>/dev/null
+                                echo
                 done
+        done
 }
 
 bifrost() {
-  sep ${FUNCNAME[0]}
+        sep ${FUNCNAME[0]}
 
-  pod=$(kubectl get po -n $namespace --no-headers | grep Running | grep "1/1" | awk '/bifrost/ { print $1 }' | head -n 1)
+        pod=$(kubectl get po -n $namespace --no-headers | grep Running | grep "1/1" | awk '/bifrost/ { print $1 }' | head -n 1)
 
-  if [[ -z $pod ]]; then
-    echo "No running pod found to check bifrost"
-    return
-  fi
+        if [[ -z $pod ]]; then
+        echo "No running pod found to check bifrost"
+        return
+        fi
 
-  sep2 "/etc/hosts on $pod" ${FUNCNAME[0]}
+        sep2 "/etc/hosts on $pod" ${FUNCNAME[0]}
 
-  ex1 $pod $namespace cat /etc/hosts
-  echo
+        ex1 $pod $namespace cat /etc/hosts
+        echo
 }
 
 gather() {
@@ -576,7 +578,7 @@ Usage: $0 </path/to/pdi_input_manifest.yaml>
         -l|--include-latest
                 Include only latest log files. Defaut is to include previous logs.
         -z|--no-bundle
-                Do not create the support bundle, only info.txt and logs.txt
+                Do not create the support bundle, only info.txt, logs.txt and exec.log
         -d|--debug
                 Debug running script by echoing commands
         -N|--non-root
@@ -591,6 +593,8 @@ Usage: $0 </path/to/pdi_input_manifest.yaml>
                 Do not include volume mountpoint logs
         --no-var-logs
                 Do not include /var/(container|pods)/logs
+        --no-git-check
+                Do not check git repo for updates
 
 EOD
         exit 1
@@ -598,14 +602,13 @@ EOD
 
 gather_deploy_logs() {
 
-        tar_file=$1
-        args=$2
+        args=$1
 
         if [[ ! -z $(which jq 2> /dev/null) ]]; then
                 docker volume ls | awk '/volume_stp_sw_gss_deploy/ { print $2 }' | while read volume; do
                                 mp=$(docker volume inspect $volume | jq -r '.[].Mountpoint')
                                 pushd $mp > /dev/null
-                                tar -${args}rf $tar_file *.log
+                                tar -${args}rf $bundle *.log
                                 popd > /dev/null
                 done
         else
@@ -616,8 +619,7 @@ gather_deploy_logs() {
 
 gather_var_logs() {
 
-        tar_file=$1
-        args=$2
+        args=$1
         files=""
 
         if [[ -d /var/log/containers ]]; then
@@ -634,8 +636,110 @@ gather_var_logs() {
                 files+="var_log_pods_missing "
         fi
 
-        tar -${args}rf $tar_file $files
+        tar -${args}rf $bundle $files
         rm -f var_log_containers_missing var_log_pods_missing
+}
+
+gather_bundle() {
+        ts=$(date +%s)
+        zulu=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+
+        ( 
+                sep 'begin bundle'
+                echo "version $VER"
+                echo "timestamp $ts"
+                echo "time $zulu"
+                echo "namespace $namespace"
+                echo
+                echo $script $cli
+                echo
+                gather $path $message_dir_path $ace_dir_path 
+                sep 'end bundle'
+        ) >info-complete.txt
+
+        ( 
+                sep 'begin logs'
+                echo "version $VER"
+                echo "timestamp $ts"
+                echo "time $zulu"
+                echo "namespace $namespace"
+                echo
+                echo $script $cli
+                echo
+                logs
+                sep 'end logs'
+        ) >logs.txt
+
+        dir=$(dirname "$(readlink -f "$0")")
+
+        #cat info-complete.txt | grep -Evf $dir/exclude.txt > info.txt # some observed issues with excluding text
+        mv info-complete.txt info.txt
+
+        echo '' # terminate progress indicator line
+
+        args=''
+        files=''
+
+        if ! $nobundle; then
+
+                if [[ -f info.txt ]]; then
+                        files+=' info.txt'
+                fi
+
+                if [[ -f logs.txt ]]; then
+                        files+=' logs.txt'
+                fi
+
+                if [[ -f output.txt ]]; then
+                        files+=' output.txt'
+                fi
+
+                if [[ -f info-complete.txt ]]; then
+                        files+=' info-complete.txt'
+                fi
+
+                if [[ -d $root_path ]]; then
+                        files+=" $root_path"
+                fi
+
+                if [[ -d $osds_path ]]; then
+                        files+=" $osds_path"
+                fi
+
+                if [[ -f jq_missing ]]; then
+                        files+=' jq_missing'
+                fi
+
+                echo Generating bundle $bundle
+                tar -${args}cf $bundle --exclude kubeconfig $files
+
+                if $deploy_logs; then
+                        gather_deploy_logs $args
+                fi
+
+                if $var_logs; then
+                        gather_var_logs $args
+                fi
+
+                if [[ ! -z $(which gzip 2> /dev/null) ]]; then
+                        gzip $bundle
+                        bundle+=".gz"
+                fi
+
+                if [[ -f jq_missing ]]; then
+                        rm jq_missing
+                fi       
+        fi
+
+        echo -e "\nAlways provide a minimum of info.txt, logs.txt and exec.log with any support tickets. \c"
+
+        if $nobundle; then
+                echo -e "info-complete.txt is not required.\c"
+        else
+                echo -e "$bundle is also recommended.\c"
+        fi
+
+        echo -e "\n"
 }
 
 # ---
@@ -655,67 +759,72 @@ k8s_port=${k8s_port:-$default_k8s_port}
 
 while [[ $# -gt 0 ]]
 do
-  key="$1"
+        key="$1"
 
-  case $key in
-    -n|--namespace)
-      echo "*** Warning overriding namespace '$namespace' from manifest"
-      namespace=$2
-      shift; shift
-      ;;
-    -k|--kubeconfig)
-      kubeconfig=$2
-      shift; shift
-      ;;
-    -o|--osds_root_dir)
-      osds_root_dir=$2
-      shift; shift
-      ;;
-    -m|--use_modelit_dir_path)
-      use_modelit=true
-      shift
-      ;;
-    -l|--include-latest)
-      include_previous=false
-      shift
-      ;;
-    -z|--no-bundle)
-      nobundle=true
-      shift
-      ;;
-    -d|--debug)
-      set -x
-      shift
-      ;;
-    -N|--non-root)
-      nonroot=true
-      shift
-      ;;
-    -h|--help)
-      usage
-      exit
-      ;;
-    -s|--since)
-      log_args+="--since $2"
-      shift; shift
-      ;;
-    --no-update)
-      update=false
-      shift
-      ;;
-    --no-deploy-logs)
-      deploy_logs=false
-      shift
-      ;;
-    --no-var-logs)
-      var_logs=false
-      shift
-      ;;
-    *)
-      echo -e "Do not understand argument \"$key\"\n"
-      usage
-      exit
-  esac
+        case $key in
+        -n|--namespace)
+                # echo "*** Warning overriding namespace '$namespace' from manifest"
+                # namespace=$2
+                # just ignore - now taken from manifest
+                shift; shift
+                ;;
+        -k|--kubeconfig)
+                kubeconfig=$2
+                shift; shift
+                ;;
+        -o|--osds_root_dir)
+                osds_root_dir=$2
+                shift; shift
+                ;;
+        -m|--use_modelit_dir_path)
+                use_modelit=true
+                shift
+                ;;
+        -l|--include-latest)
+                include_previous=false
+                shift
+                ;;
+        -z|--no-bundle)
+                nobundle=true
+                shift
+                ;;
+        -d|--debug)
+                set -x
+                shift
+                ;;
+        -N|--non-root)
+                nonroot=true
+                shift
+                ;;
+        -h|--help)
+                usage
+                exit
+                ;;
+        -s|--since)
+                log_args+="--since $2"
+                shift; shift
+                ;;
+        --no-update)
+                update=false
+                shift
+                ;;
+        --no-deploy-logs)
+                deploy_logs=false
+                shift
+                ;;
+        --no-var-logs)
+                var_logs=false
+                shift
+                ;;
+        --no-git-check)
+                gitcheck=false
+                shift
+                ;;
+        *)
+                echo -e "Do not understand argument \"$key\"\n"
+                usage
+                exit
+        esac
 done
 
 if [[ -z $namespace ]]; then
@@ -729,6 +838,20 @@ if ! $nonroot; then
                 exit 1
         fi
         isroot=true
+fi
+
+if $gitcheck; then
+        if [[ -d .git ]]; then
+                if [[ ! -z $(which git 2> /dev/null) ]]; then
+                        status=$(git fetch --dry-run --verbose 2>&1 > /dev/null)
+                        notuptodate=$(echo $status | grep "up to date" | wc -l) # should be 1 if up to date
+                        if [[ $notuptodate -ne 1 ]]; then  
+                              git fetch --dry-run --verbose
+                              echo "Consider `git pull` to refresh" 
+                              exit  
+                        fi
+                fi
+        fi
 fi
 
 if [[ -z $KUBECONFIG ]]; then
@@ -766,106 +889,19 @@ fi
 root_path=${root_path:-/smallworld}
 osds_path=${osds_root_dir:-/osds_data}
 
-ts=$(date +%s)
-zulu=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+{
+        gather_bundle 
+} 2>&1 | tee exec.log
 
-( 
-        sep 'begin bundle'
-        echo "version $VER"
-        echo "timestamp $ts"
-        echo "time $zulu"
-        echo "namespace $namespace"
-        echo
-        echo $script $cli
-        echo
-        gather $path $message_dir_path $ace_dir_path 
-        sep 'end bundle'
-) >info-complete.txt
-
-( 
-        sep 'begin logs'
-        echo "version $VER"
-        echo "timestamp $ts"
-        echo "time $zulu"
-        echo "namespace $namespace"
-        echo
-        echo $script $cli
-        echo
-        logs
-        sep 'end logs'
-) >logs.txt
-
-dir=$(dirname "$(readlink -f "$0")")
-
-#cat info-complete.txt | grep -Evf $dir/exclude.txt > info.txt # some observed issues with excluding text
-mv info-complete.txt info.txt
-
-echo '' # terminate progress indicator line
-
-args=''
-files=''
-
-if ! $nobundle; then
-        now=$(date --utc +%Y%m%d_%H%M%SZ)
-        file=bundle_${now}.tar${suffix}
-
-        if [[ -f info.txt ]]; then
-                files+=' info.txt'
-        fi
-
-        if [[ -f logs.txt ]]; then
-                files+=' logs.txt'
-        fi
-
-        if [[ -f output.txt ]]; then
-                files+=' output.txt'
-        fi
-
-        if [[ -f info-complete.txt ]]; then
-                files+=' info-complete.txt'
-        fi
-
-        if [[ -d $root_path ]]; then
-                files+=" $root_path"
-        fi
-
-        if [[ -d $osds_path ]]; then
-                files+=" $osds_path"
-        fi
-
-        if [[ -f jq_missing ]]; then
-                files+=' jq_missing'
-        fi
-
-        echo Generating bundle $(pwd)/$file
-        tar -${args}cf $(pwd)/$file --exclude kubeconfig $files
-
-        if $deploy_logs; then
-                gather_deploy_logs $(pwd)/$file $args
-        fi
-
-        if $var_logs; then
-                gather_var_logs $(pwd)/$file $args
-        fi
-
-        if [[ ! -z $(which gzip 2> /dev/null) ]]; then
-                gzip $file
-                file+=".gz"
-        fi
-
-        ls -lh $(pwd)/$file
-
-        if [[ -f jq_missing ]]; then
-                rm jq_missing
-        fi       
-fi
-
-echo -e "\nAlways provide a minimum of info.txt and logs.txt with any support tickets. \c"
-
-if $nobundle; then
-        echo -e "info-complete.txt is not required.\c"
+if [[ ! -z $(which gzip 2> /dev/null) ]]; then
+        # set -x
+        gunzip $bundle
+        tarfile=${bundle//.gz}
+        tar -rf $tarfile exec.log
+        gzip $tarfile
+        bundle+=".gz"
 else
-        echo -e "$(pwd)/$file is also recommended.\c"
+        tar -rf $bundle exec.log
 fi
 
-echo -e "\n"
+ls -lh $bundle
