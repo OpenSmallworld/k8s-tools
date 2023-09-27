@@ -848,7 +848,7 @@ if $gitcheck; then
                         notuptodate=$(echo $status | grep "up to date" | wc -l) # should be 1 if up to date
                         if [[ $notuptodate -ne 1 ]]; then  
                               git fetch --dry-run --verbose
-                              echo "Consider `git pull` to refresh or re-run with --no-git-check" 
+                              echo "Consider \"git pull\" to refresh or re-run with --no-git-check" 
                               exit  
                         fi
                 fi
