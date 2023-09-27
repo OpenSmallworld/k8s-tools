@@ -18,6 +18,7 @@ gitcheck=true
 log_args=''
 cli="$*"
 script="$(readlink -f "$0")"
+directory="$(dirname $script)"
 default_k8s_port=30443
 bundle="$(pwd)/bundle_$(date --utc +%Y%m%d_%H%M%SZ).tar"
 
@@ -841,13 +842,13 @@ if ! $nonroot; then
 fi
 
 if $gitcheck; then
-        if [[ -d .git ]]; then
+        if [[ -d "$directory/.git" ]]; then
                 if [[ ! -z $(which git 2> /dev/null) ]]; then
                         status=$(git fetch --dry-run --verbose 2>&1 > /dev/null)
                         notuptodate=$(echo $status | grep "up to date" | wc -l) # should be 1 if up to date
                         if [[ $notuptodate -ne 1 ]]; then  
                               git fetch --dry-run --verbose
-                              echo "Consider `git pull` to refresh" 
+                              echo "Consider `git pull` to refresh or re-run with --no-git-check" 
                               exit  
                         fi
                 fi
