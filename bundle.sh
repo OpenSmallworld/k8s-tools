@@ -419,7 +419,9 @@ check_kubeconfig() {
         echo -n "($counter of 4) "
 
         if [[ -f $file ]]; then
-                ls -l $file
+                checksum=$(cksum $file | awk '{ print $1 }')
+                listing=$(ls -l $file)
+                echo $checksum $listing
                 if [[ $(diff $admin_conf $file | wc -l)  -gt 0 ]]; then
                         echo "*** WARNING: difference between $admin_conf and $file"
                 fi
