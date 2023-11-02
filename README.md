@@ -123,3 +123,16 @@ Gather minimal data data into a single file called `minimal.txt`. This is someti
 git pull # recommended
 sudo bash minimal.sh </path/to/pdi_input_manifest.yaml>
 ```
+
+### list_secrets.sh
+
+List base64 encoded secrets from one or all namespaces.
+
+#### Usage
+
+```bash
+git pull # recommended
+sudo bash list_secrets.sh
+# or
+sudo bash list_secrets.sh <namespace>
+```
