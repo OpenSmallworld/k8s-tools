@@ -1,4 +1,4 @@
-VER=43
+VER=44
 
 default_namespace='gss-prod'
 dummy=''
@@ -19,6 +19,7 @@ log_args=''
 cli="$*"
 script="$(readlink -f "$0")"
 directory="$(dirname $script)"
+solutions="$(dirname "$1")"
 default_k8s_port=30443
 bundle="$(pwd)/bundle_$(date --utc +%Y%m%d_%H%M%SZ).tar"
 
@@ -611,10 +612,11 @@ gather_deploy_logs() {
                 docker volume ls | awk '/volume_stp_sw_gss_deploy/ { print $2 }' | while read volume; do
                                 mp=$(docker volume inspect $volume | jq -r '.[].Mountpoint')
                                 pushd $mp > /dev/null
-                                tar -${args}rf $bundle *.log
+                                tar -${args}rf $bundle *.log $solutions/*.log
                                 popd > /dev/null
                 done
         else
+                tar -${args}rf $bundle $solutions/*.log
                 echo "*** WARNING: jq is missing. Cannot find deploy logs mountpoint."
                 touch jq_missing
         fi
