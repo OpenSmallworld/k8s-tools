@@ -18,3 +18,4 @@ kubectl get secret -A --no-headers | awk "/^$ns/ { print \$1\":\"\$2 }" | while 
         echo -e "Namespace: $ns\nSecret: $secret"
         data=$(kubectl get secret -n $ns $secret -o jsonpath='{.data}')
         echo "${data}" | jq -r '.|to_entries[]|(.key+"="+(.value|@base64d))'
+done
