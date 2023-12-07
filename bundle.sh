@@ -1,4 +1,4 @@
-VER=44
+VER=45
 
 default_namespace='gss-prod'
 dummy=''
@@ -341,17 +341,18 @@ certificates() {
         if [[ ! -z $(which curl 2> /dev/null) ]]; then
                 if [[ -f $osds_root_dir/ssl/ca/ca.cert.pem ]]; then
                         echo no_proxy=$k8s_host curl -v --cacert $osds_root_dir/ssl/ca/ca.cert.pem https://$k8s_host:$k8s_port
-                        no_proxy=$k8s_host curl -v --cacert $osds_root_dir/ssl/ca/ca.cert.pem https://$k8s_host:$k8s_port 2>&1
+                        # ensure success by preceding command with pling - https://stackoverflow.com/questions/11231937/bash-ignoring-error-for-a-particular-command
+                        ! no_proxy=$k8s_host curl -v --cacert $osds_root_dir/ssl/ca/ca.cert.pem https://$k8s_host:$k8s_port 2>&1 
                         echo
                         echo no_proxy=$k8s_host curl -v -k https://$k8s_host:$k8s_port
-                        no_proxy=$k8s_host curl -v -k https://$k8s_host:$k8s_port 2>&1
+                        ! no_proxy=$k8s_host curl -v -k https://$k8s_host:$k8s_port 2>&1
                         echo
                         echo "(speculative attempt to use $k8s_host as a plain https application gateway)"
                         echo no_proxy=$k8s_host curl -v --cacert $osds_root_dir/ssl/ca/ca.cert.pem https://$k8s_host
-                        no_proxy=$k8s_host curl -v --cacert $osds_root_dir/ssl/ca/ca.cert.pem https://$k8s_host 2>&1
+                        ! no_proxy=$k8s_host curl -v --cacert $osds_root_dir/ssl/ca/ca.cert.pem https://$k8s_host 2>&1
                         echo
                         echo no_proxy=$k8s_host curl -v -k https://$k8s_host
-                        no_proxy=$k8s_host curl -v -k https://$k8s_host 2>&1
+                        ! no_proxy=$k8s_host curl -v -k https://$k8s_host 2>&1
                         echo
                 fi
         else
@@ -565,6 +566,7 @@ gather() {
         #logs
         swmfs $*
         bifrost
+        ls_lR
 }
 
 usage() {
@@ -703,6 +705,10 @@ gather_bundle() {
                         files+=' info-complete.txt'
                 fi
 
+                if [[ -f ls.txt ]]; then
+                        files+=' ls.txt'
+                fi
+
                 if [[ -d $root_path ]]; then
                         files+=" $root_path"
                 fi
@@ -736,7 +742,7 @@ gather_bundle() {
                 fi       
         fi
 
-        echo -e "\nAlways provide a minimum of info.txt, logs.txt and exec.log with any support tickets. \c"
+        echo -e "\nAlways provide a minimum of info.txt, logs.txt and exec.log with any support tickets. If providing the full bundle, they are not required\c"
 
         if $nobundle; then
                 echo -e "info-complete.txt is not required.\c"
@@ -745,6 +751,12 @@ gather_bundle() {
         fi
 
         echo -e "\n"
+}
+
+ls_lR() {
+        if [[ -d $osds_root_dir ]]; then
+                ls -lR $osds_root_dir > ls.txt
+        fi
 }
 
 # ---
