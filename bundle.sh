@@ -15,6 +15,7 @@ update=true
 update_ca_trust=false
 update_ca_certificates=false
 gitcheck=true
+check_internal=true
 log_args=''
 cli="$*"
 script="$(readlink -f "$0")"
@@ -340,17 +341,27 @@ certificates() {
 
         if [[ ! -z $(which curl 2> /dev/null) ]]; then
                 if [[ -f $osds_root_dir/ssl/ca/ca.cert.pem ]]; then
-                        echo no_proxy=$k8s_host curl -v --cacert $osds_root_dir/ssl/ca/ca.cert.pem https://$k8s_host:$k8s_port
                         # ensure success by preceding command with pling - https://stackoverflow.com/questions/11231937/bash-ignoring-error-for-a-particular-command
-                        ! no_proxy=$k8s_host curl -v --cacert $osds_root_dir/ssl/ca/ca.cert.pem https://$k8s_host:$k8s_port 2>&1 
-                        echo
-                        echo no_proxy=$k8s_host curl -v -k https://$k8s_host:$k8s_port
-                        ! no_proxy=$k8s_host curl -v -k https://$k8s_host:$k8s_port 2>&1
-                        echo
+                        if $check_internal; then
+                                # internal port using certificate
+                                echo '----------------------------------------'
+                                echo no_proxy=$k8s_host curl -v --cacert $osds_root_dir/ssl/ca/ca.cert.pem https://$k8s_host:$k8s_port
+                                ! no_proxy=$k8s_host curl -v --cacert $osds_root_dir/ssl/ca/ca.cert.pem https://$k8s_host:$k8s_port 2>&1 
+                                echo
+                                echo '----------------------------------------'
+                                # internal port without certificate
+                                echo no_proxy=$k8s_host curl -v -k https://$k8s_host:$k8s_port
+                                ! no_proxy=$k8s_host curl -v -k https://$k8s_host:$k8s_port 2>&1
+                                echo
+                        fi
+                        echo '----------------------------------------'
+                        # application server port using certificate
                         echo "(speculative attempt to use $k8s_host as a plain https application gateway)"
                         echo no_proxy=$k8s_host curl -v --cacert $osds_root_dir/ssl/ca/ca.cert.pem https://$k8s_host
                         ! no_proxy=$k8s_host curl -v --cacert $osds_root_dir/ssl/ca/ca.cert.pem https://$k8s_host 2>&1
                         echo
+                        echo '----------------------------------------'
+                        # application server port without certificate
                         echo no_proxy=$k8s_host curl -v -k https://$k8s_host
                         ! no_proxy=$k8s_host curl -v -k https://$k8s_host 2>&1
                         echo
@@ -601,6 +612,8 @@ Usage: $0 </path/to/pdi_input_manifest.yaml>
                 Do not include /var/(container|pods)/logs
         --no-git-check
                 Do not check git repo for updates
+        --no-check-internal
+                Do not check internal ports (for production environments)
 
 EOD
         exit 1
@@ -835,6 +848,10 @@ do
                 ;;
         --no-git-check)
                 gitcheck=false
+                shift
+                ;;
+        --no-check-internal)
+                check_internal=false
                 shift
                 ;;
         *)
