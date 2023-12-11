@@ -15,7 +15,7 @@ update=true
 update_ca_trust=false
 update_ca_certificates=false
 gitcheck=true
-check_internal=true
+certificate_check=true
 log_args=''
 cli="$*"
 script="$(readlink -f "$0")"
@@ -342,7 +342,7 @@ certificates() {
         if [[ ! -z $(which curl 2> /dev/null) ]]; then
                 if [[ -f $osds_root_dir/ssl/ca/ca.cert.pem ]]; then
                         # ensure success by preceding command with pling - https://stackoverflow.com/questions/11231937/bash-ignoring-error-for-a-particular-command
-                        if $check_internal; then
+                        if $certificate_check; then
                                 # internal port using certificate
                                 echo '----------------------------------------'
                                 echo no_proxy=$k8s_host curl -v --cacert $osds_root_dir/ssl/ca/ca.cert.pem https://$k8s_host:$k8s_port
@@ -353,18 +353,18 @@ certificates() {
                                 echo no_proxy=$k8s_host curl -v -k https://$k8s_host:$k8s_port
                                 ! no_proxy=$k8s_host curl -v -k https://$k8s_host:$k8s_port 2>&1
                                 echo
+                                echo '----------------------------------------'
+                                # application server port using certificate
+                                echo "(speculative attempt to use $k8s_host as a plain https application gateway)"
+                                echo no_proxy=$k8s_host curl -v --cacert $osds_root_dir/ssl/ca/ca.cert.pem https://$k8s_host
+                                ! no_proxy=$k8s_host curl -v --cacert $osds_root_dir/ssl/ca/ca.cert.pem https://$k8s_host 2>&1
+                                echo
+                                echo '----------------------------------------'
+                                # application server port without certificate
+                                echo no_proxy=$k8s_host curl -v -k https://$k8s_host
+                                ! no_proxy=$k8s_host curl -v -k https://$k8s_host 2>&1
+                                echo
                         fi
-                        echo '----------------------------------------'
-                        # application server port using certificate
-                        echo "(speculative attempt to use $k8s_host as a plain https application gateway)"
-                        echo no_proxy=$k8s_host curl -v --cacert $osds_root_dir/ssl/ca/ca.cert.pem https://$k8s_host
-                        ! no_proxy=$k8s_host curl -v --cacert $osds_root_dir/ssl/ca/ca.cert.pem https://$k8s_host 2>&1
-                        echo
-                        echo '----------------------------------------'
-                        # application server port without certificate
-                        echo no_proxy=$k8s_host curl -v -k https://$k8s_host
-                        ! no_proxy=$k8s_host curl -v -k https://$k8s_host 2>&1
-                        echo
                 fi
         else
                 echo "*** WARNING: curl not installed"
@@ -595,7 +595,7 @@ Usage: $0 </path/to/pdi_input_manifest.yaml>
         -l|--include-latest
                 Include only latest log files. Defaut is to include previous logs.
         -z|--no-bundle
-                Do not create the support bundle, only info.txt, logs.txt and exec.log
+                Do not create the support bundle, only info.txt, logs.txt and exec.txt
         -d|--debug
                 Debug running script by echoing commands
         -N|--non-root
@@ -612,8 +612,8 @@ Usage: $0 </path/to/pdi_input_manifest.yaml>
                 Do not include /var/(container|pods)/logs
         --no-git-check
                 Do not check git repo for updates
-        --no-check-internal
-                Do not check internal ports (for production environments)
+        --no-certificate-check
+                Do not check certificates (for production environments)
 
 EOD
         exit 1
@@ -755,7 +755,7 @@ gather_bundle() {
                 fi       
         fi
 
-        echo -e "\nAlways provide a minimum of info.txt, logs.txt and exec.log with any support tickets. If providing the full bundle, they are not required\c"
+        echo -e "\nAlways provide a minimum of info.txt, logs.txt and exec.txt with any support tickets. If providing the full bundle, they are not required. \c"
 
         if $nobundle; then
                 echo -e "info-complete.txt is not required.\c"
@@ -850,8 +850,8 @@ do
                 gitcheck=false
                 shift
                 ;;
-        --no-check-internal)
-                check_internal=false
+        --no-certificate-check)
+                certificate_check=false
                 shift
                 ;;
         *)
@@ -925,17 +925,17 @@ osds_path=${osds_root_dir:-/osds_data}
 
 {
         gather_bundle 
-} 2>&1 | tee exec.log
+} 2>&1 | tee exec.txt
 
 if [[ ! -z $(which gzip 2> /dev/null) ]]; then
         # set -x
         gunzip $bundle
         tarfile=${bundle//.gz}
-        tar -rf $tarfile exec.log
+        tar -rf $tarfile exec.txt
         gzip $tarfile
         bundle+=".gz"
 else
-        tar -rf $bundle exec.log
+        tar -rf $bundle exec.txt
 fi
 
 ls -lh $bundle
