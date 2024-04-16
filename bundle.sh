@@ -1,4 +1,4 @@
-VER=45
+VER=46
 
 default_namespace='gss-prod'
 dummy=''
@@ -364,6 +364,7 @@ certificates() {
                                 echo no_proxy=$k8s_host curl -v -k https://$k8s_host
                                 ! no_proxy=$k8s_host curl -v -k https://$k8s_host 2>&1
                                 echo
+                                echo '----------------------------------------'
                         fi
                 fi
         else
@@ -372,18 +373,40 @@ certificates() {
 
         if [[ ! -z $(which openssl 2> /dev/null) ]]; then
                 if [[ -f $osds_root_dir/ssl/cert/ssl.cert.pem ]]; then
-                        echo
                         echo openssl x509 -in $osds_root_dir/ssl/cert/ssl.cert.pem -text -noout 
                         openssl x509 -in $osds_root_dir/ssl/cert/ssl.cert.pem -text -noout 2>&1                       
                         echo
+                        echo '----------------------------------------'
                 fi
 
                 if [[ -f  $osds_root_dir/ssl/ca/ca.cert.pem ]]; then
-                        echo
                         echo openssl x509 -in $osds_root_dir/ssl/ca/ca.cert.pem -text -noout 2>&1
                         openssl x509 -in $osds_root_dir/ssl/ca/ca.cert.pem -text -noout 2>&1
                         echo
+                        echo '----------------------------------------'
                 fi
+
+                # # openssl s_client
+                # echo "no_proxy=$k8s_host openssl s_client -connect https://$k8s_host:$k8s_port 2>/dev/null | openssl x509 -text -noout"
+                # openssl s_client -connect https://$k8s_host:$k8s_port 2>/dev/null | openssl x509 -text -noout
+                # echo '----------------------------------------'
+
+                # openssl verify
+                echo openssl verify -verbose -purpose sslserver -show_chain -CApath $osds_root_dir/ssl/ca $osds_root_dir/ssl/cert/ssl.cert.pem
+                openssl verify -verbose -purpose sslserver -show_chain -CApath $osds_root_dir/ssl/ca $osds_root_dir/ssl/cert/ssl.cert.pem
+                echo '----------------------------------------'
+
+                echo openssl verify -verbose -purpose any -show_chain -CApath $osds_root_dir/ssl/ca $osds_root_dir/ssl/cert/ssl.cert.pem
+                openssl verify -verbose -purpose any -show_chain -CApath $osds_root_dir/ssl/ca $osds_root_dir/ssl/cert/ssl.cert.pem
+                echo '----------------------------------------'
+
+                echo openssl verify -verbose -purpose sslserver -show_chain -verify_hostname $k8s_host -CApath $osds_root_dir/ssl/ca $osds_root_dir/ssl/cert/ssl.cert.pem
+                openssl verify -verbose -purpose sslserver -show_chain -verify_hostname $k8s_host -CApath $osds_root_dir/ssl/ca $osds_root_dir/ssl/cert/ssl.cert.pem
+                echo '----------------------------------------'
+
+                echo openssl verify -verbose -purpose any -show_chain -verify_hostname $k8s_host -CApath $osds_root_dir/ssl/ca $osds_root_dir/ssl/cert/ssl.cert.pem
+                openssl verify -verbose -purpose any -show_chain -verify_hostname $k8s_host -CApath $osds_root_dir/ssl/ca $osds_root_dir/ssl/cert/ssl.cert.pem
+                echo '----------------------------------------'
 
                 if [[ ! -z $(which update-ca-trust 2> /dev/null) ]]; then
                         update_ca_trust=true
@@ -402,9 +425,6 @@ certificates() {
                         update-ca-trust extract
                 fi
 
-                echo openssl verify -verbose -purpose sslserver -CApath $osds_root_dir/ssl/ca $osds_root_dir/ssl/cert/ssl.cert.pem
-                openssl verify -verbose -purpose sslserver -CApath $osds_root_dir/ssl/ca $osds_root_dir/ssl/cert/ssl.cert.pem
-                echo
 
                 if [[ ! -z $(which update-ca-certificates 2> /dev/null) ]]; then
                         update_ca_certificates=true
@@ -413,9 +433,12 @@ certificates() {
                 if $update && $update_ca_certificates; then
                         if [[ -f $osds_root_dir/ssl/ca/ca.cert.pem ]]; then
                                 cp $osds_root_dir/ssl/ca/ca.cert.pem /usr/local/share/ca-certificates/
+                                echo update-ca-certificates
                                 update-ca-certificates
-                                openssl verify -verbose -purpose sslserver -CApath $osds_root_dir/ssl/ca $osds_root_dir/ssl/cert/ssl.cert.pem                                
-                                echo
+                                echo '----------------------------------------'
+                                echo openssl verify -verbose -purpose sslserver -show_chain -CApath $osds_root_dir/ssl/ca $osds_root_dir/ssl/cert/ssl.cert.pem
+                                openssl verify -verbose -purpose sslserver -show_chain -CApath $osds_root_dir/ssl/ca $osds_root_dir/ssl/cert/ssl.cert.pem                                
+                                echo '----------------------------------------'
                         fi
                 fi
         else
