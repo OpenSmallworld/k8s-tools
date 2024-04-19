@@ -250,23 +250,17 @@ process() {
 
 files() {
         sep ${FUNCNAME[0]}
-        sep2 hosts ${FUNCNAME[0]}
-        cat /etc/hosts
-        echo
 
-        sep2 resolv.conf ${FUNCNAME[0]}
-        cat /etc/resolv.conf
-        echo
-
-        sep2 exports ${FUNCNAME[0]}
-        if [[ -f /etc/exports ]]; then
-                cat /etc/exports
-        fi
-        echo
-
-        sep2 daemon.json ${FUNCNAME[0]}
-        cat /etc/docker/daemon.json
-        echo
+        for file in /etc/hosts /etc/resolv.conf /etc/exports /etc/docker/daemon.json; do
+                if [[ -f $file ]]; then
+                        name=$(basename $file)
+                        sep2 $name ${FUNCNAME[0]}
+                        cat $file
+                        echo
+                else   
+                        echo -e "\n$file missing\n"
+                fi
+        done
 }
 
 info() {
