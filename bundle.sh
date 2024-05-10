@@ -1,10 +1,9 @@
-VER=46
+VER=47
 
 default_namespace='gss-prod'
 dummy=''
 kubeconfig=''
 osds_root_dir=''
-nobundle=false
 use_modelit=false
 include_previous=true
 isroot=false
@@ -685,8 +684,8 @@ Usage: $0 </path/to/pdi_input_manifest.yaml>
                 Use MODELIT_DIR_PATH from manifest rather than ACE_DIR_PATH
         -l|--include-latest
                 Include only latest log files. Defaut is to include previous logs.
-        -z|--no-bundle
-                Do not create the support bundle, only info.txt, logs.txt and exec.txt
+        -z|--no-bundle (deprecated - now always created)
+                Do not create the support bundle, only info.txt and exec.txt
         -d|--debug
                 Debug running script by echoing commands
         -N|--non-root
@@ -790,74 +789,63 @@ gather_bundle() {
         args=''
         files=''
 
-        if ! $nobundle; then
-                if [[ -f info.txt ]]; then
-                        files+=' info.txt'
-                fi
-
-                if [[ -f logs.txt ]]; then
-                        files+=' logs.txt'
-                fi
-
-                if [[ -f output.txt ]]; then
-                        files+=' output.txt'
-                fi
-
-                if [[ -f info-complete.txt ]]; then
-                        files+=' info-complete.txt'
-                fi
-
-                if [[ -f ls.txt ]]; then
-                        files+=' ls.txt'
-                fi
-
-                if [[ -d $root_path ]]; then
-                        files+=" $root_path"
-                fi
-
-                if [[ -d $osds_path ]]; then
-                        files+=" $osds_path"
-                fi
-
-                if [[ -d bundle_logs ]]; then
-                        files+=" bundle_logs/*"
-                fi
-
-                if [[ -f jq_missing ]]; then
-                        files+=' jq_missing'
-                fi
-
-                echo Generating bundle $bundle
-                tar -${args}cf $bundle --exclude kubeconfig $files
-
-                if $deploy_logs; then
-                        gather_deploy_logs $args
-                fi
-
-                if $var_logs; then
-                        gather_var_logs $args
-                fi
-
-                if [[ ! -z $(which gzip 2> /dev/null) ]]; then
-                        gzip $bundle
-                        bundle+=".gz"
-                fi
-
-                if [[ -f jq_missing ]]; then
-                        rm jq_missing
-                fi       
+        if [[ -f info.txt ]]; then
+                files+=' info.txt'
         fi
 
-        echo -e "\nAlways provide a minimum of info.txt, logs.txt and exec.txt with any support tickets. If providing the full bundle, they are not required. \c"
-
-        if $nobundle; then
-                # echo -e "info-complete.txt is not required.\c"
-                echo "\c"
-        else
-                echo -e "$bundle is also recommended.\c"
+        if [[ -f logs.txt ]]; then
+                files+=' logs.txt'
         fi
 
-        echo -e "\n"
+        if [[ -f output.txt ]]; then
+                files+=' output.txt'
+        fi
+
+        if [[ -f info-complete.txt ]]; then
+                files+=' info-complete.txt'
+        fi
+
+        if [[ -f ls.txt ]]; then
+                files+=' ls.txt'
+        fi
+
+        if [[ -d $root_path ]]; then
+                files+=" $root_path"
+        fi
+
+        if [[ -d $osds_path ]]; then
+                files+=" $osds_path"
+        fi
+
+        if [[ -d bundle_logs ]]; then
+                files+=" bundle_logs/*"
+        fi
+
+        if [[ -f jq_missing ]]; then
+                files+=' jq_missing'
+        fi
+
+        echo Generating bundle $bundle
+        tar -${args}cf $bundle --exclude kubeconfig $files
+
+        if $deploy_logs; then
+                gather_deploy_logs $args
+        fi
+
+        if $var_logs; then
+                gather_var_logs $args
+        fi
+
+        if [[ ! -z $(which gzip 2> /dev/null) ]]; then
+                gzip $bundle
+                bundle+=".gz"
+        fi
+
+        if [[ -f jq_missing ]]; then
+                rm jq_missing
+        fi       
+
+        echo -e "\nAlways provide the complete bundle with any support tickets. No other files are required.\n"
 }
 
 ls_lR() {
@@ -887,9 +875,7 @@ do
 
         case $key in
         -n|--namespace)
-                # echo "*** Warning overriding namespace '$namespace' from manifest"
-                # namespace=$2
-                # just ignore - now taken from manifest
+                # silently ignore - now taken from manifest
                 shift; shift
                 ;;
         -k|--kubeconfig)
@@ -909,8 +895,8 @@ do
                 shift
                 ;;
         -z|--no-bundle)
-                nobundle=true
-                shift
+                # silently ignore
+                shift 
                 ;;
         -d|--debug)
                 set -x
