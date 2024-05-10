@@ -542,6 +542,80 @@ logs() {
         done
 }
 
+log_header() {
+
+        sep "begin log $1"
+        echo "version $VER"
+        echo "timestamp $ts"
+        echo "time $zulu"
+        echo "namespace $namespace"
+        echo
+        echo $script $cli
+        echo
+}
+
+gather_logs() {
+        if [[ -d bundle_logs ]]; then
+            rm -Rf ./bundle_logs
+        fi
+
+        mkdir ./bundle_logs
+
+        # kube-dns 
+        for pod in $(kubectl get pods -o name -n kube-system -l k8s-app=kube-dns); do 
+                (
+                        log_header $pod
+                        kubectl logs -n kube-system $pod $log_args
+                ) > bundle_logs/$pod.log
+        done
+
+        #flannel
+        for pod in $(kubectl get pods -o name -n kube-system -l app=flannel); do 
+                (
+                        log_header $pod
+                        kubectl logs -n kube-system $pod $log_args
+                ) > bundle_logs/$pod.log                
+        done
+
+        #kube-proxy
+        for pod in $(kubectl get pods -o name -n kube-system -l k8s-app=kube-proxy); do 
+                (
+                        log_header $pod
+                        kubectl logs -n kube-system $pod $log_args
+                ) > bundle_logs/$pod.log                
+        done
+
+        # logging
+        kubectl get pods -n logging --no-headers 2>/dev/null | awk '{ print $1 }' | while read pod; do
+                (
+                        log_header $pod
+                        kubectl logs -n logging $pod $log_args
+                ) > bundle_logs/$pod.log
+        done
+
+        # nexus
+        kubectl get pods -n nexus --no-headers 2>/dev/null | awk '{ print $1 }' | while read pod; do
+                (
+                        log_header $pod
+                        kubectl logs -n nexus $pod $log_args
+                ) > bundle_logs/$pod.log
+        done
+
+        # given namespace
+        kubectl get pods -n $namespace --no-headers 2>/dev/null | awk '{ print $1 }' | while read pod; do
+                if $include_previous; then
+                        (
+                                log_header $pod
+                                kubectl logs -n $namespace $pod $log_args --previous 2>&1 
+                        ) > bundle_logs/$pod-previous.log
+                fi                
+                (
+                        log_header $pod
+                        kubectl logs -n $namespace $pod $log_args 
+                ) > bundle_logs/$pod.log
+        done
+}
+
 describe() {
         sep ${FUNCNAME[0]}
 
@@ -692,25 +766,24 @@ gather_bundle() {
                 echo
                 gather $path $message_dir_path $ace_dir_path 
                 sep 'end bundle'
-        ) >info-complete.txt
+        ) >info.txt
 
-        ( 
-                sep 'begin logs'
-                echo "version $VER"
-                echo "timestamp $ts"
-                echo "time $zulu"
-                echo "namespace $namespace"
-                echo
-                echo $script $cli
-                echo
-                logs
-                sep 'end logs'
-        ) >logs.txt
+        # ( 
+        #         sep 'begin logs'
+        #         echo "version $VER"
+        #         echo "timestamp $ts"
+        #         echo "time $zulu"
+        #         echo "namespace $namespace"
+        #         echo
+        #         echo $script $cli
+        #         echo
+        #         logs
+        #         sep 'end logs'
+        # ) >logs.txt
+
+        gather_logs
 
         dir=$(dirname "$(readlink -f "$0")")
-
-        #cat info-complete.txt | grep -Evf $dir/exclude.txt > info.txt # some observed issues with excluding text
-        mv info-complete.txt info.txt
 
         echo '' # terminate progress indicator line
 
@@ -718,7 +791,6 @@ gather_bundle() {
         files=''
 
         if ! $nobundle; then
-
                 if [[ -f info.txt ]]; then
                         files+=' info.txt'
                 fi
@@ -745,6 +817,10 @@ gather_bundle() {
 
                 if [[ -d $osds_path ]]; then
                         files+=" $osds_path"
+                fi
+
+                if [[ -d bundle_logs ]]; then
+                        files+=" bundle_logs/*"
                 fi
 
                 if [[ -f jq_missing ]]; then
@@ -775,7 +851,8 @@ gather_bundle() {
         echo -e "\nAlways provide a minimum of info.txt, logs.txt and exec.txt with any support tickets. If providing the full bundle, they are not required. \c"
 
         if $nobundle; then
-                echo -e "info-complete.txt is not required.\c"
+                # echo -e "info-complete.txt is not required.\c"
+                echo "\c"
         else
                 echo -e "$bundle is also recommended.\c"
         fi
