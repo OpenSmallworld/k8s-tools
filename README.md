@@ -28,7 +28,7 @@ Gather data into a support "bundle" for diagnosing issues.
 
 #### Usage
 
-**Note**: It is important to run the bundle script from the deployment node, or a node which has docker and Kubernetes installed.
+**Note**: It is important to run the bundle script from the deployment node, or a node which has ```kubectl``` installed.
 
 ```bash
 git pull # recommended
@@ -43,7 +43,7 @@ For AWS or restricted shells where root access is not permitted, use the ```--no
 
 If ```KUBECONFIG``` is not defined, you can point to an alternative file using the ```--kubeconfig </path/to/kubeconfig>``` or ```-k </path/to/kubeconfig>``` option.
 
-If a pod has restarted and you want to include the logs fronm the previous instance, use the ```--include-previous``` or ```--p``` option.
+If a pod has restarted and you want to include the logs fronm the previous instance, use the ```--include-previous``` or ```-p``` option.
 
 If you need to restrict the log output, you can use the ```--since``` or ```-s``` option. Valid units are ```h```,```m```,```s```. Examples of this are:
 

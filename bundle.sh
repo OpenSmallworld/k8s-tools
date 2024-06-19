@@ -338,23 +338,23 @@ certificates() {
                         if $certificate_check; then
                                 # internal port using certificate
                                 echo '----------------------------------------'
-                                echo no_proxy=$k8s_host curl -v --cacert $osds_root_dir/ssl/ca/ca.cert.pem https://$k8s_host:$k8s_port
-                                ! no_proxy=$k8s_host curl -v --cacert $osds_root_dir/ssl/ca/ca.cert.pem https://$k8s_host:$k8s_port 2>&1 
+                                echo "no_proxy=$k8s_host curl -v --cacert $osds_root_dir/ssl/ca/ca.cert.pem https://$k8s_host:$k8s_port 2>&1"
+                                ! no_proxy=$k8s_host curl -v --cacert $osds_root_dir/ssl/ca/ca.cert.pem https://$k8s_host:$k8s_port 2>&1
                                 echo
                                 echo '----------------------------------------'
                                 # internal port without certificate
-                                echo no_proxy=$k8s_host curl -v -k https://$k8s_host:$k8s_port
+                                echo "no_proxy=$k8s_host curl -v -k https://$k8s_host:$k8s_port 2>&1"
                                 ! no_proxy=$k8s_host curl -v -k https://$k8s_host:$k8s_port 2>&1
                                 echo
                                 echo '----------------------------------------'
                                 # application server port using certificate
                                 echo "(speculative attempt to use $k8s_host as a plain https application gateway)"
-                                echo no_proxy=$k8s_host curl -v --cacert $osds_root_dir/ssl/ca/ca.cert.pem https://$k8s_host
+                                echo "no_proxy=$k8s_host curl -v --cacert $osds_root_dir/ssl/ca/ca.cert.pem https://$k8s_host 2>&1"
                                 ! no_proxy=$k8s_host curl -v --cacert $osds_root_dir/ssl/ca/ca.cert.pem https://$k8s_host 2>&1
                                 echo
                                 echo '----------------------------------------'
                                 # application server port without certificate
-                                echo no_proxy=$k8s_host curl -v -k https://$k8s_host
+                                echo "no_proxy=$k8s_host curl -v -k https://$k8s_host 2>&1"
                                 ! no_proxy=$k8s_host curl -v -k https://$k8s_host 2>&1
                                 echo
                                 echo '----------------------------------------'
@@ -366,14 +366,14 @@ certificates() {
 
         if [[ ! -z $(which openssl 2> /dev/null) ]]; then
                 if [[ -f $osds_root_dir/ssl/cert/ssl.cert.pem ]]; then
-                        echo openssl x509 -in $osds_root_dir/ssl/cert/ssl.cert.pem -text -noout 
+                        echo "openssl x509 -in $osds_root_dir/ssl/cert/ssl.cert.pem -text -noout 2>&1"
                         openssl x509 -in $osds_root_dir/ssl/cert/ssl.cert.pem -text -noout 2>&1                       
                         echo
                         echo '----------------------------------------'
                 fi
 
                 if [[ -f  $osds_root_dir/ssl/ca/ca.cert.pem ]]; then
-                        echo openssl x509 -in $osds_root_dir/ssl/ca/ca.cert.pem -text -noout 2>&1
+                        echo "openssl x509 -in $osds_root_dir/ssl/ca/ca.cert.pem -text -noout 2>&1"
                         openssl x509 -in $osds_root_dir/ssl/ca/ca.cert.pem -text -noout 2>&1
                         echo
                         echo '----------------------------------------'
@@ -385,20 +385,20 @@ certificates() {
                 # echo '----------------------------------------'
 
                 # openssl verify
-                echo openssl verify -verbose -purpose sslserver -show_chain -CApath $osds_root_dir/ssl/ca $osds_root_dir/ssl/cert/ssl.cert.pem
-                openssl verify -verbose -purpose sslserver -show_chain -CApath $osds_root_dir/ssl/ca $osds_root_dir/ssl/cert/ssl.cert.pem
+                echo "openssl verify -verbose -purpose sslserver -show_chain -CApath $osds_root_dir/ssl/ca $osds_root_dir/ssl/cert/ssl.cert.pem 2>&1"
+                openssl verify -verbose -purpose sslserver -show_chain -CApath $osds_root_dir/ssl/ca $osds_root_dir/ssl/cert/ssl.cert.pem 2>&1
                 echo '----------------------------------------'
 
-                echo openssl verify -verbose -purpose any -show_chain -CApath $osds_root_dir/ssl/ca $osds_root_dir/ssl/cert/ssl.cert.pem
-                openssl verify -verbose -purpose any -show_chain -CApath $osds_root_dir/ssl/ca $osds_root_dir/ssl/cert/ssl.cert.pem
+                echo "openssl verify -verbose -purpose any -show_chain -CApath $osds_root_dir/ssl/ca $osds_root_dir/ssl/cert/ssl.cert.pem 2>&1"
+                openssl verify -verbose -purpose any -show_chain -CApath $osds_root_dir/ssl/ca $osds_root_dir/ssl/cert/ssl.cert.pem 2>&1
                 echo '----------------------------------------'
 
-                echo openssl verify -verbose -purpose sslserver -show_chain -verify_hostname $k8s_host -CApath $osds_root_dir/ssl/ca $osds_root_dir/ssl/cert/ssl.cert.pem
-                openssl verify -verbose -purpose sslserver -show_chain -verify_hostname $k8s_host -CApath $osds_root_dir/ssl/ca $osds_root_dir/ssl/cert/ssl.cert.pem
+                echo "openssl verify -verbose -purpose sslserver -show_chain -verify_hostname $k8s_host -CApath $osds_root_dir/ssl/ca $osds_root_dir/ssl/cert/ssl.cert.pem 2>&1"
+                openssl verify -verbose -purpose sslserver -show_chain -verify_hostname $k8s_host -CApath $osds_root_dir/ssl/ca $osds_root_dir/ssl/cert/ssl.cert.pem 2>&1
                 echo '----------------------------------------'
 
-                echo openssl verify -verbose -purpose any -show_chain -verify_hostname $k8s_host -CApath $osds_root_dir/ssl/ca $osds_root_dir/ssl/cert/ssl.cert.pem
-                openssl verify -verbose -purpose any -show_chain -verify_hostname $k8s_host -CApath $osds_root_dir/ssl/ca $osds_root_dir/ssl/cert/ssl.cert.pem
+                echo "openssl verify -verbose -purpose any -show_chain -verify_hostname $k8s_host -CApath $osds_root_dir/ssl/ca $osds_root_dir/ssl/cert/ssl.cert.pem 2>&1"
+                openssl verify -verbose -purpose any -show_chain -verify_hostname $k8s_host -CApath $osds_root_dir/ssl/ca $osds_root_dir/ssl/cert/ssl.cert.pem 2>&1
                 echo '----------------------------------------'
 
                 if [[ ! -z $(which update-ca-trust 2> /dev/null) ]]; then
@@ -407,14 +407,15 @@ certificates() {
 
                 if $update && $update_ca_trust; then
                         if [[ -f $osds_root_dir/ssl/ca/ca.cert.pem ]]; then
-                                yum -y install ca-certificates
-                                update-ca-trust force-enable
+                                echo "yum -y install ca-certificates && update-ca-trust force-enable"
+                                yum -y install ca-certificates && update-ca-trust force-enable
                         fi
                 fi
 
                 cp $osds_root_dir/ssl/ca/ca.cert.pem /etc/pki/ca-trust/source/anchors/
 
                 if $update && $update_ca_trust; then
+                        echo "update-ca-trust extract"
                         update-ca-trust extract
                 fi
 
@@ -429,8 +430,8 @@ certificates() {
                                 echo update-ca-certificates
                                 update-ca-certificates
                                 echo '----------------------------------------'
-                                echo openssl verify -verbose -purpose sslserver -show_chain -CApath $osds_root_dir/ssl/ca $osds_root_dir/ssl/cert/ssl.cert.pem
-                                openssl verify -verbose -purpose sslserver -show_chain -CApath $osds_root_dir/ssl/ca $osds_root_dir/ssl/cert/ssl.cert.pem                                
+                                echo "openssl verify -verbose -purpose sslserver -show_chain -CApath $osds_root_dir/ssl/ca $osds_root_dir/ssl/cert/ssl.cert.pem 2>&1"
+                                openssl verify -verbose -purpose sslserver -show_chain -CApath $osds_root_dir/ssl/ca $osds_root_dir/ssl/cert/ssl.cert.pem 2>&1                     
                                 echo '----------------------------------------'
                         fi
                 fi
@@ -476,11 +477,10 @@ kubeconfig_() {
 
         root_home=$(getent passwd root | cut -d: -f6)
         pathname="$root_home/.kube/config"
-        check_kubeconfig 2 $admin_conf $pathname "*** WARNING: file $pathname does not exist or cannot determine KUBECONFIG for user root"
 
+        check_kubeconfig 2 $admin_conf $pathname "*** WARNING: file $pathname does not exist or cannot determine KUBECONFIG for user root"
         check_kubeconfig 3 $admin_conf "$kubeconfig"
         check_kubeconfig 4 $admin_conf "$osds_root_dir/kubeconfig/config"
-
 }
 
 nexus() {
@@ -675,7 +675,7 @@ usage() {
 Usage: $0 </path/to/pdi_input_manifest.yaml>
 
         -n|--namespace <namespace>
-                Override the namespace <namespace>. Not usually required because the namespace is now derived from the manifest
+                Override the namespace <namespace>. Deprecated because the namespace is now derived from the manifest. Present to maintain compatibility with previous versions 
         -k|--kubeconfig </path/to/kubeconfig>
                 Use alternate config file to that specified in KUBECONFIG, or where not defined
         -o|--osds_root_dir </path/to/osds_root_dir>
@@ -683,7 +683,7 @@ Usage: $0 </path/to/pdi_input_manifest.yaml>
         -m|--use_modelit_dir_path
                 Use MODELIT_DIR_PATH from manifest rather than ACE_DIR_PATH
         -l|--include-latest
-                Include only latest log files. Defaut is to include previous logs.
+                Include only latest log files. Defaut is to include previous logs
         -z|--no-bundle (deprecated - now always created)
                 Do not create the support bundle, only info.txt and exec.txt
         -d|--debug
@@ -935,7 +935,7 @@ do
                 shift
                 ;;
         *)
-                echo -e "Do not understand argument \"$key\"\n"
+                echo -e "*** WARNING: Do not understand argument \"$key\"\n"
                 usage
                 exit
         esac
@@ -948,10 +948,28 @@ fi
 # avoid permissions errors
 if ! $nonroot; then
         if [[ $(id -u) -ne 0 ]]; then
-                echo "*** Error: Running as user $USER not as root/sudo user"
+                echo "*** ERROR: Running as user $USER not as root/sudo user"
                 exit 1
         fi
         isroot=true
+fi
+
+if [[ ! -z $(which kubectl 2> /dev/null) ]]; then
+        kubectl_present=true
+else
+        echo "*** ERROR: kubectl not present in $PATH"
+        exit 1
+fi
+
+if [[ -z $KUBECONFIG ]]; then
+        if [[ ! -z $kubeconfig ]]; then
+                export KUBECONFIG=$kubeconfig
+        else
+                echo "*** Error: KUBECONFIG nor -k/--kubeconfig set"
+                exit 1
+        fi
+else
+        kubeconfig=$KUBECONFIG
 fi
 
 if $gitcheck; then
@@ -966,17 +984,6 @@ if $gitcheck; then
                         fi
                 fi
         fi
-fi
-
-if [[ -z $KUBECONFIG ]]; then
-        if [[ ! -z $kubeconfig ]]; then
-                export KUBECONFIG=$kubeconfig
-        else
-                echo "*** Error: KUBECONFIG nor -k/--kubeconfig set"
-                exit 1
-        fi
-else
-        kubeconfig=$KUBECONFIG
 fi
 
 message_dir_path=$(grep MESSAGES_DIR_PATH $path | cut -f2 -d"'" | cut -f1 -d"'")
