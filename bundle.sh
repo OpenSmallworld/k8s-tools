@@ -986,6 +986,13 @@ if $gitcheck; then
         fi
 fi
 
+for dir in /usr/local/sbin /usr/local/bin /usr/sbin /usr/bin; do
+        case "$PATH" in 
+                $dir:*|*:$dir:*|*:$dir) :;; # already there, do nothing
+                *) PATH=$PATH:$dir          # otherwise add it last
+        esac
+done
+
 message_dir_path=$(grep MESSAGES_DIR_PATH $path | cut -f2 -d"'" | cut -f1 -d"'")
 ace_dir_path=$(grep ACE_DIR_PATH $path | cut -f2 -d"'" | cut -f1 -d"'")
 modelit_dir_path=$(grep MODELIT_DIR_PATH $path | cut -f2 -d"'" | cut -f1 -d"'")
