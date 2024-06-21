@@ -465,22 +465,27 @@ kubeconfig_() {
         echo ""
 
         admin_conf="/etc/kubernetes/admin.conf"
-        ls -l $admin_conf
 
-        if [[ ! -z $SUDO_USER ]]; then
-                user_home=$(getent passwd $SUDO_USER | cut -d: -f6)
-                pathname="$user_home/.kube/config"
-                check_kubeconfig 1 $admin_conf $pathname "*** WARNING: file $pathname does not exist or cannot determine KUBECONFIG for user $SUDO_USER"
+        if [[ -f $admin_conf ]]; then
+                ls -l $admin_conf
+
+                if [[ ! -z $SUDO_USER ]]; then
+                        user_home=$(getent passwd $SUDO_USER | cut -d: -f6)
+                        pathname="$user_home/.kube/config"
+                        check_kubeconfig 1 $admin_conf $pathname "*** WARNING: file $pathname does not exist or cannot determine KUBECONFIG for user $SUDO_USER"
+                else
+                        echo "*** WARNING: skipping SUDO_USER as not set"
+                fi
+
+                root_home=$(getent passwd root | cut -d: -f6)
+                pathname="$root_home/.kube/config"
+
+                check_kubeconfig 2 $admin_conf $pathname "*** WARNING: file $pathname does not exist or cannot determine KUBECONFIG for user root"
+                check_kubeconfig 3 $admin_conf "$kubeconfig"
+                check_kubeconfig 4 $admin_conf "$osds_root_dir/kubeconfig/config"
         else
-                echo "*** WARNING: skipping SUDO_USER as not set"
+                echo "*** WARNING: file $admin_conf does not exist"
         fi
-
-        root_home=$(getent passwd root | cut -d: -f6)
-        pathname="$root_home/.kube/config"
-
-        check_kubeconfig 2 $admin_conf $pathname "*** WARNING: file $pathname does not exist or cannot determine KUBECONFIG for user root"
-        check_kubeconfig 3 $admin_conf "$kubeconfig"
-        check_kubeconfig 4 $admin_conf "$osds_root_dir/kubeconfig/config"
 }
 
 nexus() {
