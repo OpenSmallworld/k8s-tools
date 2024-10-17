@@ -690,7 +690,7 @@ Usage: $0 </path/to/pdi_input_manifest.yaml>
         -l|--include-latest
                 Include only latest log files. Defaut is to include previous logs
         -z|--no-bundle (deprecated - now always created)
-                Do not create the support bundle, only info.txt and exec.txt
+                Use -s/--since to limit the bundle size
         -d|--debug
                 Debug running script by echoing commands
         -N|--non-root
@@ -902,6 +902,7 @@ do
         -z|--no-bundle)
                 # silently ignore
                 shift 
+                echo "-z/--no-bundle is deprecated. use -s/--since to limit the bundle size"
                 ;;
         -d|--debug)
                 set -x
