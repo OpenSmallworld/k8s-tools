@@ -628,6 +628,10 @@ describe() {
                                 sep2 "$type -- $namespace" ${FUNCNAME[0]}
                                 kubectl describe $type -n $namespace 2>/dev/null
                                 echo
+                                if [[ $type == "pv" ]]; then
+                                        kubectl get $type -n $ns 2>/dev/null
+                                        echo
+                                fi
                 done
         done
 }
