@@ -1,4 +1,4 @@
-VER=47
+VER=48
 
 default_namespace='gss-prod'
 dummy=''
